@@ -1,10 +1,10 @@
 const rapify = require('../../src/index');
-const memoryInterface = rapify.crudInterfaces.memory;
-const { POST, GET, DELETE } = rapify.constants;
+const userModel = require('./userModel');
+const mongooseInterface = rapify.crudInterfaces.mongoose;
 
 module.exports = {
-    prefix: 'users',
+    prefix: '/users',
     public: true,
     restify: true,
-    crudInterface: memoryInterface,
+    crudInterface: mongooseInterface(userModel),
 };

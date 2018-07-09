@@ -104,7 +104,7 @@ const validateRequest = async (req, res, next) => {
 
         if(!rule.keepExtraFields) {
             props = ignoreExtraFields(props, rule.props);
-            params = ignoreExtraFields(params, rule.params);
+            // params = ignoreExtraFields(params, rule.params);
             query = ignoreExtraFields(query, rule.query);
             body = ignoreExtraFields(body, rule.body);
         }
@@ -152,7 +152,7 @@ const validateRequest = async (req, res, next) => {
         if(typeof rule.customValidation === 'function') {
             const result = rule.customValidation(input, req);
 
-            if(typeof result.then === 'function')
+            if(result && typeof result.then === 'function')
                 await result;
         }
 

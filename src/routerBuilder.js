@@ -77,6 +77,56 @@ function buildRestEndpoint(operation, controller) {
                 fullRoute: `${controller.prefix}/`,
                 relativeRoute: '/',
                 method: GET,
+                params: {
+                    pagination: {
+                        __has_children: true,
+
+                        page: {
+                            constraints: {
+                                numericality: {
+                                    onlyInteger: true,
+                                    greaterThanOrEqualTo: 1,
+                                },
+                            },
+                            sanitize: val => +val,
+                            default: 1,
+                        },
+                        pageSize: {
+                            constraints: {
+                                numericality: {
+                                    onlyInteger: true,
+                                    greaterThanOrEqualTo: 1,
+                                    lessThanOrEqualTo: 100,
+                                },
+                            },
+                            sanitize: val => +val,
+                            default: 20,
+                        },
+                        sortBy: {
+                            constraints: {
+                                inclusion: {
+                                    within: [
+                                        '_id'
+                                    ],
+                                    message: '^Invalid sortBy value',
+                                },
+                            },
+                            default: '_id',
+                        },
+                        sortOrder: {
+                            constraints: {
+                                inclusion: {
+                                    within: [
+                                        'asc',
+                                        'desc',
+                                    ],
+                                    message: '^Invalid sortOrder value',
+                                },
+                            },
+                            default: 'desc',
+                        },
+                    },
+                },
             };
         }
     }
@@ -166,7 +216,21 @@ function getHandlerWrapper(handler) {
             next();
         }, res, next);
 
-        if(typeof temp.then === 'function')
+        if(temp && typeof temp.then === 'function')
+            await temp;
+    });
+}
+
+function getSanitizerHandlerWrapper(handler) {
+    return asyncRoute(async (req, res, next) => {
+        const originalResponse = res.locals.response;
+
+        const temp = handler(req, originalResponse, (data) => {
+            res.locals.response = data;
+            next();
+        }, res, next);
+
+        if(temp && typeof temp.then === 'function')
             await temp;
     });
 }
@@ -209,7 +273,7 @@ function fromController(controller) {
             endpointInjector,
             endpointValidator,
             endpointHandler,
-            ...sanitizeResponse ? sanitizeResponse : [],
+            ...sanitizeResponse ? [getSanitizerHandlerWrapper(endpoint.sanitizeResponse)] : [],
         ];
         // example: router.post('/test', middleware, middleware, handler);
         router[endpoint.method](...args);

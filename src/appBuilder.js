@@ -54,13 +54,13 @@ function initializeFromOptions(options, builder) {
     const defaultMiddleware = getDefaultMiddleware(options);
     if(defaultMiddleware && defaultMiddleware.length) {
         for(const mid of defaultMiddleware)
-            builder.registerMiddleware(mid, 'default');
+            builder.registerMiddleware(mid, constants.middlewareLevels.default);
     }
 
     if(middleware && middleware.length) {
         for(const mid of middleware) {
             if(typeof mid === 'function')
-                builder.registerMiddleware(mid, 'preDefault');
+                builder.registerMiddleware(mid, constants.middlewareLevels.preDefault);
             else
                 builder.registerMiddleware(mid.middleware, mid.level);
         }
@@ -68,7 +68,7 @@ function initializeFromOptions(options, builder) {
 
     if(authMiddleware && authMiddleware.length) {
         for(const mid of authMiddleware)
-            builder.registerMiddleware(mid, 'private');
+            builder.registerAuthMiddleware(mid);
     }
 
     if(controllers && controllers.length) {
@@ -76,24 +76,24 @@ function initializeFromOptions(options, builder) {
             builder.registerController(controller);
     }
 
-    builder.registerMiddleware(endpointNotFoundMiddleware, 'error');
-    builder.registerMiddleware(endpointErrorMiddleware, 'error');
+    builder.registerMiddleware(endpointNotFoundMiddleware, constants.middlewareLevels.error);
+    builder.registerMiddleware(endpointErrorMiddleware, constants.middlewareLevels.error);
 }
 
 function appBuilder(options) {
     const middleware = [];
 
     const builder = {
-        registerMiddleware: (mid, level = 'preDefault') => {
+        registerMiddleware: (mid, level = constants.middlewareLevels.preDefault) => {
             middleware.push({ middleware: mid, level });
         },
         registerAuthMiddleware: mid => {
-            middleware.push({ middleware: mid, level: 'postPrivate' });
+            middleware.push({ middleware: mid, level: constants.middlewareLevels.prePrivate });
         },
         registerController: controller => {
             middleware.push({
                 middleware: routerBuilder.fromController(controller),
-                level: controller.public ? 'public' : 'private',
+                level: controller.public ? constants.middlewareLevels.public : constants.middlewareLevels.private,
                 prefix: controller.prefix,
             });
         },
@@ -115,8 +115,8 @@ function appBuilder(options) {
     };
 
     initializeFromOptions(options, builder);
-    builder.registerMiddleware(responseMiddleware, 'postPublic');
-    builder.registerMiddleware(responseMiddleware, 'postPrivate');
+    builder.registerMiddleware(responseMiddleware, constants.middlewareLevels.postPublic);
+    builder.registerMiddleware(responseMiddleware, constants.middlewareLevels.postPrivate);
 
     return builder;
 }

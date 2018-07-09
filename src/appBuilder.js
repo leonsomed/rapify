@@ -59,10 +59,15 @@ function initializeFromOptions(options, builder) {
 
     if(middleware && middleware.length) {
         for(const mid of middleware) {
-            if(typeof mid === 'function')
+            if(typeof mid === 'function') {
                 builder.registerMiddleware(mid, constants.middlewareLevels.preDefault);
-            else
+            }
+            else {
+                if(typeof mid.middleware !== 'function' || middlewareLevels.indexOf(mid.level) === -1)
+                    throw new Error('registered middleware has the wrong format');
+
                 builder.registerMiddleware(mid.middleware, mid.level);
+            }
         }
     }
 

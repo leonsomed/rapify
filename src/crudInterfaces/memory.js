@@ -1,10 +1,8 @@
 const ResourceNotFoundError = require('../errors/resourceNotFound');
 
-let docs;
-let idCounter = 100000;
-
 function interface(defaultValue = []) {
-    docs = defaultValue;
+    const docs = defaultValue;
+    let idCounter = 100000;
 
     return {
         create: async (req) => {

@@ -1,38 +1,41 @@
 const ResourceNotFoundError = require('../errors/resourceNotFound');
 
 function interface(model) {
+    if(!model)
+        throw Error('model is undefined');
+
     return {
-        create: async (req) => {
-            return await model.create(req.rapify.input);
+        create: async (rapify) => {
+            return await model.create(rapify.input);
         },
-        read: async (req) => {
-            const doc = await model.findById(req.rapify.input.id);
+        read: async (rapify) => {
+            const doc = await model.findById(rapify.input.id);
 
             if(!doc)
-                throw new ResourceNotFoundError(req.rapify.input.id, 'not found');
+                throw new ResourceNotFoundError(rapify.input.id, 'not found');
 
             return doc;
         },
-        update: async (req) => {
-            const { id, ...data } = req.rapify.input;
-            const doc = await model.findOneAndUpdate({ _id: req.rapify.input.id }, { $set: data }, { new: true });
+        update: async (rapify) => {
+            const { id, ...data } = rapify.input;
+            const doc = await model.findOneAndUpdate({ _id: rapify.input.id }, { $set: data }, { new: true });
 
             if(!doc)
-                throw new ResourceNotFoundError(req.rapify.input.id, 'not found');
+                throw new ResourceNotFoundError(rapify.input.id, 'not found');
 
             return doc;
         },
-        delete: async (req) => {
-            const doc = await model.findOneAndRemove({ _id: req.rapify.input.id });
+        delete: async (rapify) => {
+            const doc = await model.findOneAndRemove({ _id: rapify.input.id });
 
             if(!doc)
-                throw new ResourceNotFoundError(req.rapify.input.id, 'not found');
+                throw new ResourceNotFoundError(rapify.input.id, 'not found');
 
             return doc;
         },
-        paginate: async (req) => {
-            const options = req.rapify.input.pagination;
-            const query = req.rapify.input.filters;
+        paginate: async (rapify) => {
+            const options = rapify.input.pagination;
+            const query = rapify.input.filters;
             const totalDocuments = await model.find(query).count();
 
             let documentsTask = model.find(query);

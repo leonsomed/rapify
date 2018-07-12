@@ -1,8 +1,8 @@
-class ResourceNotFound extends Error {
+class ResourceNotFoundError extends Error {
     constructor(id, message) {
         super(message);
 
-        this.type = 'ResourceNotFound';
+        this.type = 'ResourceNotFoundError';
         this.status = 404;
         this.id = id;
     }
@@ -17,4 +17,4 @@ class ResourceNotFound extends Error {
     }
 }
 
-module.exports = ResourceNotFound;
+module.exports = ResourceNotFoundError;

@@ -192,7 +192,7 @@ function getCrudOpHandler(xCrudOp, crudInterface) {
             return next();
 
         let result;
-        const temp = crudInterface[xCrudOp](req);
+        const temp = crudInterface[xCrudOp](req.rapify);
 
         if(temp && typeof temp.then === 'function')
             result = await temp;

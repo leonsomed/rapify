@@ -5,25 +5,25 @@ function interface(defaultValue = []) {
     let idCounter = 100000;
 
     return {
-        create: async (req) => {
+        create: async (rapify) => {
             const doc = {
                 id: idCounter++,
-                ...req.rapify.input,
+                ...rapify.input,
             };
             docs.push(doc);
 
             return doc;
         },
-        read: async (req) => {
-            const doc = docs.find(n => n.id === +req.rapify.input.id);
+        read: async (rapify) => {
+            const doc = docs.find(n => n.id === +rapify.input.id);
 
             if(!doc)
-                throw new ResourceNotFoundError(req.rapify.input.id, 'not found');
+                throw new ResourceNotFoundError(rapify.input.id, 'not found');
 
             return doc;
         },
-        update: async (req) => {
-            const { id, ...data } = req.rapify.input;
+        update: async (rapify) => {
+            const { id, ...data } = rapify.input;
             const index = docs.findIndex(n => n.id === +id);
 
             if(index === -1)
@@ -34,8 +34,8 @@ function interface(defaultValue = []) {
                 ...data,
             };
         },
-        delete: async (req) => {
-            const { id, ...data } = req.rapify.input;
+        delete: async (rapify) => {
+            const { id, ...data } = rapify.input;
             const index = docs.findIndex(n => n.id === +id);
 
             if(index === -1)
@@ -47,7 +47,7 @@ function interface(defaultValue = []) {
 
             return doc;
         },
-        paginate: async (req) => {
+        paginate: async (rapify) => {
             return docs;
         },
     };

@@ -17,11 +17,13 @@ function parseController(controller) {
     const newController = { ...controller };
     const { model, crudInterface } = newController;
 
-    if(model && crudInterface)
+    if (model && crudInterface) {
         throw new Error(`Cannot specify both model and crudInterface for controller: ${controller.prefix}`);
+    }
 
-    if(model)
+    if (model) {
         newController.crudInterface = mongooseCrudInterface(model);
+    }
 
     return newController;
 }
@@ -29,7 +31,7 @@ function parseController(controller) {
 function buildRestEndpoint(operation, controller) {
     const { POST, DELETE, GET } = constants.http;
 
-    switch(operation) {
+    switch (operation) {
         case constants.crud.create: {
             return {
                 keepExtraFields: true,
@@ -106,7 +108,7 @@ function buildRestEndpoint(operation, controller) {
                             constraints: {
                                 inclusion: {
                                     within: [
-                                        '_id'
+                                        '_id',
                                     ],
                                     message: '^Invalid sortBy value',
                                 },
@@ -130,20 +132,23 @@ function buildRestEndpoint(operation, controller) {
             };
         }
     }
+
+    throw new Error('invalid operation provided');
 }
 
 function parseEndpoints(controller) {
-    const { endpoints, restify, crudInterface, prefix } = controller;
+    const { restify, crudInterface, prefix } = controller;
     const missingEndpoints = [];
 
-    if(restify) {
-        if(!crudInterface)
+    if (restify) {
+        if (!crudInterface) {
             throw new Error(`crudInterface or model is required when restify is enabled for controller: ${prefix}`);
+        }
 
         // verify each restify operation has a corresponding CRUD interface operation
         let restOperations = {};
 
-        if(typeof restify === 'boolean') {
+        if (typeof restify === 'boolean') {
             restOperations = {
                 [constants.crud.create]: constants.crud.create,
                 [constants.crud.read]: constants.crud.read,
@@ -155,32 +160,40 @@ function parseEndpoints(controller) {
             restOperations = restify;
         }
 
-        Object.keys(restOperations).forEach(op => {
-            if(!crudInterface[op])
+        Object.keys(restOperations).forEach((op) => {
+            if (!crudInterface[op]) {
                 throw new Error(`crudInterface operation: ${op} is required because restify operation: ${op} is enabled for controller: ${prefix}`);
+            }
 
-            if(typeof crudInterface[op] !== 'function')
+            if (typeof crudInterface[op] !== 'function') {
                 throw new Error(`crudInterface operation: ${op} must be a function for controller: ${prefix}`);
+            }
 
             missingEndpoints.push(buildRestEndpoint(op, controller));
         });
     }
 
     // flatten endpoints and add properties
-    const newEndpoints = endpoints ? _.flatMapDeep(Object.entries(endpoints), ([route, endpoints]) => {
-        return Object.entries(endpoints).map(([method, endpoint]) => ({
+    const entries = Object.entries(controller.endpoints);
+    const newEndpoints = controller.endpoints ? _.flatMapDeep(entries, ([route, endpoints]) => (
+        Object.entries(endpoints).map(([method, endpoint]) => ({
             fullRoute: `${controller.prefix}${route}`,
             relativeRoute: route,
             method,
             ...endpoint,
-        }));
-    }) : [];
+        }))
+    )) : [];
 
     // inject any missing endpoints
-    for(const missing of missingEndpoints) {
-        const found = newEndpoints.find(n => n.fullRoute === missing.fullRoute && n.method === missing.method);
-        if(!found)
+    for (const missing of missingEndpoints) {
+        const found = newEndpoints.find(n => (
+            n.fullRoute === missing.fullRoute &&
+            n.method === missing.method
+        ));
+
+        if (!found) {
             newEndpoints.push(missing);
+        }
     }
 
     return newEndpoints;
@@ -188,16 +201,13 @@ function parseEndpoints(controller) {
 
 function getCrudOpHandler(xCrudOp, crudInterface) {
     return asyncRoute(async (req, res, next) => {
-        if(res.locals.wasRouteHandled)
-            return next();
+        if (res.locals.wasRouteHandled) {
+            next();
+            return;
+        }
 
-        let result;
         const temp = crudInterface[xCrudOp](req.rapify);
-
-        if(temp && typeof temp.then === 'function')
-            result = await temp;
-        else
-            result = temp;
+        const result = temp && typeof temp.then === 'function' ? await temp : temp;
 
         res.locals.response = { data: result };
         res.locals.wasRouteHandled = true;
@@ -207,8 +217,10 @@ function getCrudOpHandler(xCrudOp, crudInterface) {
 
 function getHandlerWrapper(handler) {
     return asyncRoute(async (req, res, next) => {
-        if(res.locals.wasRouteHandled)
-            return next();
+        if (res.locals.wasRouteHandled) {
+            next();
+            return;
+        }
 
         const temp = handler(req, (data) => {
             res.locals.response = data;
@@ -216,8 +228,9 @@ function getHandlerWrapper(handler) {
             next();
         }, res, next);
 
-        if(temp && typeof temp.then === 'function')
+        if (temp && typeof temp.then === 'function') {
             await temp;
+        }
     });
 }
 
@@ -230,8 +243,9 @@ function getSanitizerHandlerWrapper(handler) {
             next();
         }, res, next);
 
-        if(temp && typeof temp.then === 'function')
+        if (temp && typeof temp.then === 'function') {
             await temp;
+        }
     });
 }
 
@@ -242,20 +256,27 @@ function getEndpointHandler(endpoint, controller) {
         handler,
     } = endpoint;
 
-    if(!handler && !xCrudOp)
+    if (!handler && !xCrudOp) {
         throw new Error(`Either xCrudOp or handler is required for route: ${fullRoute}`);
+    }
 
-    if(handler && xCrudOp)
+    if (handler && xCrudOp) {
         throw new Error(`Cannot specify both xCrudOp and handler for route: ${fullRoute}`);
+    }
 
-    if(xCrudOp && allowedCrudOps.indexOf(xCrudOp) === -1)
+    if (xCrudOp && allowedCrudOps.indexOf(xCrudOp) === -1) {
         throw new Error(`Invalid xCrudOp ${xCrudOp} in ${fullRoute}`);
+    }
 
-    if(handler)
+    if (handler) {
         return getHandlerWrapper(handler);
+    }
 
-    if(xCrudOp)
+    if (xCrudOp) {
         return getCrudOpHandler(xCrudOp, controller.crudInterface);
+    }
+
+    throw new Error('handler or xCrudOp must be specified');
 }
 
 function fromController(controller) {
@@ -263,7 +284,7 @@ function fromController(controller) {
     const parsedController = parseController(controller);
     const endpoints = parseEndpoints(parsedController);
 
-    for(const endpoint of endpoints) {
+    for (const endpoint of endpoints) {
         const endpointInjector = (req, res, next) => { req.rapify._endpoint = endpoint; next(); };
         const endpointHandler = getEndpointHandler(endpoint, controller);
         const sanitizeResponse = endpoint.sanitizeResponse;

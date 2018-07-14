@@ -1,8 +1,10 @@
 function responseHandler(req, res, next) {
     const response = res.locals.response;
 
-    if(!response)
-        return next();
+    if (!response) {
+        next();
+        return;
+    }
 
     res.json(response);
 }

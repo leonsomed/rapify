@@ -45,7 +45,7 @@ describe('endpointError', () => {
 
         expect(res.statusCode).to.equal(status);
         expect(response).to.eqls({
-            errors: [errorResponse]
+            errors: [errorResponse],
         });
     });
 

@@ -6,7 +6,7 @@ class ListError extends Error {
         super('ListError');
 
         const formattedErrors = errors
-            .map(n => typeof n.toJSON === 'function' ? n : new UnknownError(n.message, 500))
+            .map(n => (typeof n.toJSON === 'function' ? n : new UnknownError(n.message, 500)))
             .map(n => n.toJSON());
 
         const maxStatus = _.max(formattedErrors, n => n.status);

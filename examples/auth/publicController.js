@@ -1,4 +1,5 @@
 const rapify = require('../../src/index');
+
 const memoryInterface = rapify.crudInterfaces.memory;
 
 module.exports = {

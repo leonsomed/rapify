@@ -3,21 +3,22 @@ const httpMocks = require('../../mocks/http');
 const asyncRoute = require('../../../src/middleware/asyncRoute');
 
 describe('asyncRoute', () => {
-    let req;
-    let res;
+    let request;
+    let response;
 
     beforeEach(() => {
-        req = httpMocks.request.default();
-        res = httpMocks.response.default();
-    })
+        request = httpMocks.request.default();
+        response = httpMocks.response.default();
+    });
 
     it('should call next with an error when an error is thrown', async () => {
+        // eslint-disable-next-line no-unused-vars
         const middleware = asyncRoute(async (req, res, next) => {
             throw new Error('something went wrong');
         });
 
-        await middleware(req, res, (error) => {
-            expect(error).to.be.an('error')
+        await middleware(request, response, (error) => {
+            expect(error).to.be.an('error');
         });
     });
 
@@ -27,9 +28,9 @@ describe('asyncRoute', () => {
             next();
         });
 
-        await middleware(req, res, (error) => {
-            expect(req).to.include({ testing: true });
-            expect(error).to.be.an('undefined')
+        await middleware(request, response, (error) => {
+            expect(request).to.include({ testing: true });
+            expect(error).to.be.an('undefined');
         });
     });
 });

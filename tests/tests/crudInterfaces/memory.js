@@ -5,7 +5,6 @@ const ResourceNotFoundError = require('../../../src/errors/resourceNotFound');
 const throwWrapper = require('../../../tests/helpers/throwWrapper');
 
 describe('memory CRUD interface', () => {
-
     describe('initialization', () => {
         it('should return CRUD methods', () => {
             const int = memoryInterface();
@@ -23,6 +22,7 @@ describe('memory CRUD interface', () => {
             const rapify = httpMocks.input.rapify({ query });
 
             const pagination = await int.paginate(rapify);
+            // eslint-disable-next-line no-unused-expressions
             expect(pagination).to.be.empty;
         });
 
@@ -37,12 +37,11 @@ describe('memory CRUD interface', () => {
     });
 
     describe('CRUD operations', () => {
-
         describe('success', () => {
             let newUser;
             const originalName = 'leo';
             const originalAge = 22;
-            const crudInterface = memoryInterface();;
+            const crudInterface = memoryInterface();
 
             beforeEach(async () => {
                 const body = {
@@ -85,7 +84,7 @@ describe('memory CRUD interface', () => {
                 const rapify = httpMocks.input.rapify({ params });
                 await crudInterface.delete(rapify);
 
-                const throwable = await throwWrapper(async () => await crudInterface.read(rapify));
+                const throwable = await throwWrapper(() => crudInterface.read(rapify));
                 expect(throwable).to.throw(ResourceNotFoundError);
             });
 
@@ -93,16 +92,16 @@ describe('memory CRUD interface', () => {
         });
 
         describe('fail', () => {
-            const crudInterface = memoryInterface();;
+            const crudInterface = memoryInterface();
 
             it('should throw not found error', async () => {
                 const rapify = httpMocks.input.rapify({
                     params: {
-                        id: 123
+                        id: 123,
                     },
                 });
 
-                const throwable = await throwWrapper(async () => await crudInterface.read(rapify));
+                const throwable = await throwWrapper(() => crudInterface.read(rapify));
                 expect(throwable).to.throw(ResourceNotFoundError);
             });
 
@@ -112,7 +111,7 @@ describe('memory CRUD interface', () => {
                     body: { name: 'test' },
                 });
 
-                const throwable = await throwWrapper(async () => await crudInterface.update(rapify));
+                const throwable = await throwWrapper(() => crudInterface.update(rapify));
                 expect(throwable).to.throw(ResourceNotFoundError);
             });
 
@@ -121,10 +120,9 @@ describe('memory CRUD interface', () => {
                     params: { id: 123 },
                 });
 
-                const throwable = await throwWrapper(async () => await crudInterface.delete(rapify));
+                const throwable = await throwWrapper(() => crudInterface.delete(rapify));
                 expect(throwable).to.throw(ResourceNotFoundError);
             });
         });
-
     });
 });

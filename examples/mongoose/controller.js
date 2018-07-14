@@ -1,5 +1,6 @@
 const rapify = require('../../src/index');
 const userModel = require('./userModel');
+
 const mongooseInterface = rapify.crudInterfaces.mongoose;
 
 module.exports = {

@@ -30,15 +30,15 @@ const mocks = {
                 method: 'GET',
                 url: '/test/path?myid=312',
                 query: {
-                    myid: '312'
+                    myid: '312',
                 },
             });
-        }
+        },
     },
     response: {
         default() {
             return httpMocks.createResponse();
-        }
+        },
     },
 };
 

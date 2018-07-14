@@ -13,11 +13,11 @@ before(async () => {
 });
 
 after(async () => {
+    await User.remove({});
     await mongooseHelper.stop();
 });
 
 describe('mongoose CRUD interface', () => {
-
     describe('initialization', () => {
         it('should fail by passing an invalid model', () => {
             expect(() => mongooseInterface()).to.throw();
@@ -35,7 +35,6 @@ describe('mongoose CRUD interface', () => {
     });
 
     describe('CRUD operations', () => {
-
         describe('success', () => {
             let newUser;
             const originalName = 'leo';
@@ -87,7 +86,7 @@ describe('mongoose CRUD interface', () => {
                 const rapify = httpMocks.input.rapify({ params });
                 await crudInterface.delete(rapify);
 
-                const throwable = await throwWrapper(async () => await crudInterface.read(rapify));
+                const throwable = await throwWrapper(() => crudInterface.read(rapify));
                 expect(throwable).to.throw(ResourceNotFoundError);
             });
 
@@ -117,8 +116,9 @@ describe('mongoose CRUD interface', () => {
                 const pageSize = 25;
                 const totalPages = Math.ceil(total / pageSize);
                 const docs = [];
-                for(let i = 0; i < total; i++)
+                for (let i = 0; i < total; i += 1) {
                     docs.push({ name: 'leos', age: i });
+                }
 
                 await User.create(docs);
 
@@ -182,7 +182,7 @@ describe('mongoose CRUD interface', () => {
                     },
                 });
 
-                const throwable = await throwWrapper(async () => await crudInterface.read(rapify));
+                const throwable = await throwWrapper(() => crudInterface.read(rapify));
                 expect(throwable).to.throw(ResourceNotFoundError);
             });
 
@@ -192,7 +192,7 @@ describe('mongoose CRUD interface', () => {
                     body: { name: 'test' },
                 });
 
-                const throwable = await throwWrapper(async () => await crudInterface.update(rapify));
+                const throwable = await throwWrapper(() => crudInterface.update(rapify));
                 expect(throwable).to.throw(ResourceNotFoundError);
             });
 
@@ -201,7 +201,7 @@ describe('mongoose CRUD interface', () => {
                     params: { id: ObjectId() },
                 });
 
-                const throwable = await throwWrapper(async () => await crudInterface.delete(rapify));
+                const throwable = await throwWrapper(() => crudInterface.delete(rapify));
                 expect(throwable).to.throw(ResourceNotFoundError);
             });
 
@@ -210,10 +210,9 @@ describe('mongoose CRUD interface', () => {
                     query: {},
                 });
 
-                const throwable = await throwWrapper(async () => await crudInterface.paginate(rapify));
+                const throwable = await throwWrapper(() => crudInterface.paginate(rapify));
                 expect(throwable).to.throw();
             });
         });
-
     });
 });

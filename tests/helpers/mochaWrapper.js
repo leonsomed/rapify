@@ -3,8 +3,9 @@ function mochaWrapper(fn) {
         try {
             const temp = fn();
 
-            if(temp && typeof temp.then === 'function')
+            if (temp && typeof temp.then === 'function') {
                 await temp;
+            }
 
             done();
         } catch (err) {

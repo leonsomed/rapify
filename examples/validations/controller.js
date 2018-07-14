@@ -1,5 +1,6 @@
 const rapify = require('../../src/index');
-const { POST, GET } = rapify.constants.http;
+
+const { POST } = rapify.constants.http;
 const memoryInterface = rapify.crudInterfaces.memory();
 
 module.exports = {
@@ -59,7 +60,7 @@ module.exports = {
             [POST]: {
                 xCrudOp: 'create',
                 propsMap: {
-                    role: req => 'basic',
+                    role: () => 'basic',
                 },
                 props: {
                     role: {
@@ -76,8 +77,9 @@ module.exports = {
                     },
                 },
                 customValidation: (input, req) => {
-                    if(req.rapify.input.id < 1000)
+                    if (req.rapify.input.id < 1000) {
                         throw new Error('id must be greater than 1000');
+                    }
                 },
             },
         },

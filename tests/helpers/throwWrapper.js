@@ -2,9 +2,8 @@ async function throwWrapper(fn) {
     try {
         await fn();
         return () => {};
-    }
-    catch(error) {
-        return () => { throw error };
+    } catch (error) {
+        return () => { throw error; };
     }
 }
 

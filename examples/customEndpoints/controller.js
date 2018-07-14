@@ -1,5 +1,6 @@
 const rapify = require('../../src/index');
-const { POST, GET } = rapify.constants.http;
+
+const { GET } = rapify.constants.http;
 const memoryInterface = rapify.crudInterfaces.memory;
 
 module.exports = {

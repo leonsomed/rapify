@@ -1,13 +1,15 @@
 const ResourceNotFoundError = require('../errors/resourceNotFound');
 
-function interface(defaultValue = []) {
+function memoryInterface(defaultValue = []) {
     const docs = defaultValue;
     let idCounter = 100000;
 
     return {
         create: async (rapify) => {
+            idCounter += 1;
+
             const doc = {
-                id: idCounter++,
+                id: idCounter,
                 ...rapify.input,
             };
             docs.push(doc);
@@ -17,8 +19,9 @@ function interface(defaultValue = []) {
         read: async (rapify) => {
             const doc = docs.find(n => n.id === +rapify.input.id);
 
-            if(!doc)
+            if (!doc) {
                 throw new ResourceNotFoundError(rapify.input.id, 'not found');
+            }
 
             return doc;
         },
@@ -26,20 +29,24 @@ function interface(defaultValue = []) {
             const { id, ...data } = rapify.input;
             const index = docs.findIndex(n => n.id === +id);
 
-            if(index === -1)
+            if (index === -1) {
                 throw new ResourceNotFoundError(id, 'not found');
+            }
 
-            return docs[index] = {
+            docs[index] = {
                 ...docs[index],
                 ...data,
             };
+
+            return docs[index];
         },
         delete: async (rapify) => {
-            const { id, ...data } = rapify.input;
+            const { id } = rapify.input;
             const index = docs.findIndex(n => n.id === +id);
 
-            if(index === -1)
+            if (index === -1) {
                 throw new ResourceNotFoundError(id, 'not found');
+            }
 
             const doc = docs[index];
 
@@ -47,10 +54,8 @@ function interface(defaultValue = []) {
 
             return doc;
         },
-        paginate: async (rapify) => {
-            return docs;
-        },
+        paginate: async () => docs,
     };
-};
+}
 
-module.exports = interface;
+module.exports = memoryInterface;

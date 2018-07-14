@@ -9,26 +9,28 @@ const endpointErrorMiddleware = require('./middleware/endpointError');
 const routerBuilder = require('./routerBuilder');
 const constants = require('./constants');
 
+const cMidLevels = constants.middlewareLevels;
+
 const middlewareLevels = [
-    constants.middlewareLevels.preDefault,
-    constants.middlewareLevels.default,
-    constants.middlewareLevels.postDefault,
-    constants.middlewareLevels.prePublic,
-    constants.middlewareLevels.public,
-    constants.middlewareLevels.postPublic,
-    constants.middlewareLevels.prePrivate,
-    constants.middlewareLevels.private,
-    constants.middlewareLevels.postPrivate,
-    constants.middlewareLevels.preError,
-    constants.middlewareLevels.error,
-    constants.middlewareLevels.postError,
+    cMidLevels.preDefault,
+    cMidLevels.default,
+    cMidLevels.postDefault,
+    cMidLevels.prePublic,
+    cMidLevels.public,
+    cMidLevels.postPublic,
+    cMidLevels.prePrivate,
+    cMidLevels.private,
+    cMidLevels.postPrivate,
+    cMidLevels.preError,
+    cMidLevels.error,
+    cMidLevels.postError,
 ];
 
 function getDefaultMiddleware(options) {
     const { cors, bodyParser } = options;
     const middleware = [initRequestMiddleware];
 
-    if(cors) {
+    if (cors) {
         middleware.push(corsMid({
             origin: true,
             credentials: true,
@@ -36,7 +38,7 @@ function getDefaultMiddleware(options) {
         }));
     }
 
-    if(bodyParser) {
+    if (bodyParser) {
         middleware.push(bodyParserMid.urlencoded({ extended: true }));
         middleware.push(bodyParserMid.json());
     }
@@ -52,53 +54,56 @@ function initializeFromOptions(options, builder) {
     } = options;
 
     const defaultMiddleware = getDefaultMiddleware(options);
-    if(defaultMiddleware && defaultMiddleware.length) {
-        for(const mid of defaultMiddleware)
-            builder.registerMiddleware(mid, constants.middlewareLevels.default);
+    if (defaultMiddleware && defaultMiddleware.length) {
+        for (const mid of defaultMiddleware) {
+            builder.registerMiddleware(mid, cMidLevels.default);
+        }
     }
 
-    if(middleware && middleware.length) {
-        for(const mid of middleware) {
-            if(typeof mid === 'function') {
-                builder.registerMiddleware(mid, constants.middlewareLevels.preDefault);
-            }
-            else {
-                if(typeof mid.middleware !== 'function' || middlewareLevels.indexOf(mid.level) === -1)
+    if (middleware && middleware.length) {
+        for (const mid of middleware) {
+            if (typeof mid === 'function') {
+                builder.registerMiddleware(mid, cMidLevels.preDefault);
+            } else {
+                if (typeof mid.middleware !== 'function' || middlewareLevels.indexOf(mid.level) === -1) {
                     throw new Error('registered middleware has the wrong format');
+                }
 
                 builder.registerMiddleware(mid.middleware, mid.level);
             }
         }
     }
 
-    if(authMiddleware && authMiddleware.length) {
-        for(const mid of authMiddleware)
+    if (authMiddleware && authMiddleware.length) {
+        for (const mid of authMiddleware) {
             builder.registerAuthMiddleware(mid);
+        }
     }
 
-    if(controllers && controllers.length) {
-        for(const controller of controllers)
+    if (controllers && controllers.length) {
+        for (const controller of controllers) {
             builder.registerController(controller);
+        }
     }
 
-    builder.registerMiddleware(endpointNotFoundMiddleware, constants.middlewareLevels.error);
-    builder.registerMiddleware(endpointErrorMiddleware, constants.middlewareLevels.error);
+    builder.registerMiddleware(endpointNotFoundMiddleware, cMidLevels.error);
+    builder.registerMiddleware(endpointErrorMiddleware, cMidLevels.error);
 }
 
 function appBuilder(options) {
     const middleware = [];
 
     const builder = {
-        registerMiddleware: (mid, level = constants.middlewareLevels.preDefault) => {
+        registerMiddleware: (mid, level = cMidLevels.preDefault) => {
             middleware.push({ middleware: mid, level });
         },
-        registerAuthMiddleware: mid => {
-            middleware.push({ middleware: mid, level: constants.middlewareLevels.prePrivate });
+        registerAuthMiddleware: (mid) => {
+            middleware.push({ middleware: mid, level: cMidLevels.prePrivate });
         },
-        registerController: controller => {
+        registerController: (controller) => {
             middleware.push({
                 middleware: routerBuilder.fromController(controller),
-                level: controller.public ? constants.middlewareLevels.public : constants.middlewareLevels.private,
+                level: controller.public ? cMidLevels.public : cMidLevels.private,
                 prefix: controller.prefix,
             });
         },
@@ -106,22 +111,25 @@ function appBuilder(options) {
             const { port, onStart } = options;
             const app = !defaultApp ? express() : defaultApp;
 
-            for(const level of middlewareLevels) {
+            for (const level of middlewareLevels) {
                 middleware
                     .filter(n => n.level === level)
-                    .forEach(n => n.prefix ? app.use(n.prefix, n.middleware) : app.use(n.middleware));
+                    .forEach(n => (
+                        n.prefix ? app.use(n.prefix, n.middleware) : app.use(n.middleware)
+                    ));
             }
 
-            if(port)
+            if (port) {
                 app.listen(port, onStart);
+            }
 
             return app;
         },
     };
 
     initializeFromOptions(options, builder);
-    builder.registerMiddleware(responseMiddleware, constants.middlewareLevels.postPublic);
-    builder.registerMiddleware(responseMiddleware, constants.middlewareLevels.postPrivate);
+    builder.registerMiddleware(responseMiddleware, cMidLevels.postPublic);
+    builder.registerMiddleware(responseMiddleware, cMidLevels.postPrivate);
 
     return builder;
 }

@@ -1,24 +1,19 @@
-const Mongoose = require('mongoose').Mongoose;
-const Mockgoose = require('mockgoose').Mockgoose;
 const expect = require('chai').expect;
-
+const ObjectId = require('mongoose').Types.ObjectId;
 const mongooseInterface = require('../../../src/crudInterfaces/mongoose');
 const httpMocks = require('../../../tests/mocks/http');
 const ResourceNotFoundError = require('../../../src/errors/resourceNotFound');
 const throwWrapper = require('../../../tests/helpers/throwWrapper');
+const mongooseHelper = require('../../../tests/helpers/mongoose');
 
-const mongoose = new Mongoose();
-const mockgoose = new Mockgoose(mongoose);
-const ObjectId = mongoose.Types.ObjectId;
-
-const User = mongoose.model('User', new mongoose.Schema({
-    name: String,
-    age: Number,
-}));
+const User = mongooseHelper.models.User;
 
 before(async () => {
-    await mockgoose.prepareStorage();
-    await mongoose.connect('mongodb://localhost:27017/TestingDB');
+    await mongooseHelper.init();
+});
+
+after(async () => {
+    await mongooseHelper.stop();
 });
 
 describe('mongoose CRUD interface', () => {

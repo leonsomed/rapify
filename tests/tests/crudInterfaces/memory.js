@@ -1,6 +1,6 @@
 const expect = require('chai').expect;
 const memoryInterface = require('../../../src/crudInterfaces/memory');
-const requestMock = require('../../../tests/mocks/request');
+const httpMocks = require('../../../tests/mocks/http');
 const ResourceNotFoundError = require('../../../src/errors/resourceNotFound');
 const throwWrapper = require('../../../tests/helpers/throwWrapper');
 
@@ -19,8 +19,8 @@ describe('memory CRUD interface', () => {
 
         it('should initialize with an empty set', async () => {
             const int = memoryInterface();
-            const query = requestMock.pagination(1, 20);
-            const rapify = requestMock.expressReq({ query });
+            const query = httpMocks.input.pagination(1, 20);
+            const rapify = httpMocks.input.rapify({ query });
 
             const pagination = await int.paginate(rapify);
             expect(pagination).to.be.empty;
@@ -28,8 +28,8 @@ describe('memory CRUD interface', () => {
 
         it('should initialize with a default value', async () => {
             const int = memoryInterface([{ id: 1 }]);
-            const query = requestMock.pagination(1, 20);
-            const rapify = requestMock.expressReq({ query });
+            const query = httpMocks.input.pagination(1, 20);
+            const rapify = httpMocks.input.rapify({ query });
 
             const pagination = await int.paginate(rapify);
             expect(pagination).to.have.lengthOf(1);
@@ -49,7 +49,7 @@ describe('memory CRUD interface', () => {
                     name: originalName,
                     age: originalAge,
                 };
-                const rapify = requestMock.expressReq({ body });
+                const rapify = httpMocks.input.rapify({ body });
 
                 newUser = await crudInterface.create(rapify);
             });
@@ -61,7 +61,7 @@ describe('memory CRUD interface', () => {
 
             it('should read a document', async () => {
                 const params = { id: newUser.id };
-                const rapify = requestMock.expressReq({ params });
+                const rapify = httpMocks.input.rapify({ params });
                 const user = await crudInterface.read(rapify);
 
                 expect(user.name).to.equal(originalName);
@@ -73,7 +73,7 @@ describe('memory CRUD interface', () => {
                 const age = 88;
                 const params = { id: newUser.id };
                 const body = { name, age };
-                const rapify = requestMock.expressReq({ params, body });
+                const rapify = httpMocks.input.rapify({ params, body });
                 const user = await crudInterface.update(rapify);
 
                 expect(user.name).to.equal(name);
@@ -82,7 +82,7 @@ describe('memory CRUD interface', () => {
 
             it('should delete a document', async () => {
                 const params = { id: newUser.id };
-                const rapify = requestMock.expressReq({ params });
+                const rapify = httpMocks.input.rapify({ params });
                 await crudInterface.delete(rapify);
 
                 const throwable = await throwWrapper(async () => await crudInterface.read(rapify));
@@ -96,7 +96,7 @@ describe('memory CRUD interface', () => {
             const crudInterface = memoryInterface();;
 
             it('should throw not found error', async () => {
-                const rapify = requestMock.expressReq({
+                const rapify = httpMocks.input.rapify({
                     params: {
                         id: 123
                     },
@@ -107,7 +107,7 @@ describe('memory CRUD interface', () => {
             });
 
             it('should not update a non existant document', async () => {
-                const rapify = requestMock.expressReq({
+                const rapify = httpMocks.input.rapify({
                     params: { id: 123 },
                     body: { name: 'test' },
                 });
@@ -117,7 +117,7 @@ describe('memory CRUD interface', () => {
             });
 
             it('should not delete a non existant document', async () => {
-                const rapify = requestMock.expressReq({
+                const rapify = httpMocks.input.rapify({
                     params: { id: 123 },
                 });
 

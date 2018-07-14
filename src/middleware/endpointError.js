@@ -1,23 +1,21 @@
+const UnknownError = require('../errors/unknown');
+
 // NOTE we need the "next" parameter because express will see 4 parameters
 // and use this middleware as an error handler
-const errorHandler = (error, req, res, next) => {
-    if(process.env.NODE_ENV !== 'production') {
-        console.log(error);
+const errorHandler = (err, req, res, next) => {
+    if(!err) {
+        err = new UnknownError('UnknownError', 500);
+    }
+    else if(typeof err.toJSON !== 'function') {
+        const message = process.env.NODE_ENV === 'production' ? 'UnknownError' : err.message;
+        err = new UnknownError(message, 500);
     }
 
-    if(error && typeof error.toJSON === 'function') {
-        const e = error.toJSON();
-        return res.status(e.status || 400).json(Array.isArray(e) ? { errors: e } : { errors: [e] });
-    }
+    const error = err.toJSON();
+    const status = error.status || 400;
+    const errors = Array.isArray(error.errors) ? { errors: error.errors } : { errors: [error] };
 
-    return res.status(500).json({
-        errors: [
-            {
-                error: 'UnknownError',
-                message: process.env.NODE_ENV === 'production' ? 'UnknownError' : error.message,
-            },
-        ],
-    });
+    res.status(status).json(errors);
 };
 
 module.exports = errorHandler;

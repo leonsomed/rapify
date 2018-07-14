@@ -3,7 +3,7 @@ const Mockgoose = require('mockgoose').Mockgoose;
 const expect = require('chai').expect;
 
 const mongooseInterface = require('../../../src/crudInterfaces/mongoose');
-const requestMock = require('../../../tests/mocks/request');
+const httpMocks = require('../../../tests/mocks/http');
 const ResourceNotFoundError = require('../../../src/errors/resourceNotFound');
 const throwWrapper = require('../../../tests/helpers/throwWrapper');
 
@@ -52,7 +52,7 @@ describe('mongoose CRUD interface', () => {
                     name: originalName,
                     age: originalAge,
                 };
-                const rapify = requestMock.expressReq({ body });
+                const rapify = httpMocks.input.rapify({ body });
 
                 newUser = await crudInterface.create(rapify);
             });
@@ -68,7 +68,7 @@ describe('mongoose CRUD interface', () => {
 
             it('should read a document', async () => {
                 const params = { id: newUser.id };
-                const rapify = requestMock.expressReq({ params });
+                const rapify = httpMocks.input.rapify({ params });
                 const user = await crudInterface.read(rapify);
 
                 expect(user.name).to.equal(originalName);
@@ -80,7 +80,7 @@ describe('mongoose CRUD interface', () => {
                 const age = 88;
                 const params = { id: newUser.id };
                 const body = { name, age };
-                const rapify = requestMock.expressReq({ params, body });
+                const rapify = httpMocks.input.rapify({ params, body });
                 const user = await crudInterface.update(rapify);
 
                 expect(user.name).to.equal(name);
@@ -89,7 +89,7 @@ describe('mongoose CRUD interface', () => {
 
             it('should delete a document', async () => {
                 const params = { id: newUser.id };
-                const rapify = requestMock.expressReq({ params });
+                const rapify = httpMocks.input.rapify({ params });
                 await crudInterface.delete(rapify);
 
                 const throwable = await throwWrapper(async () => await crudInterface.read(rapify));
@@ -97,8 +97,8 @@ describe('mongoose CRUD interface', () => {
             });
 
             it('should paginate a document', async () => {
-                const query = requestMock.pagination(1, 20, '_id', 'desc');
-                const rapify = requestMock.expressReq({ query });
+                const query = httpMocks.input.pagination(1, 20, '_id', 'desc');
+                const rapify = httpMocks.input.rapify({ query });
                 const result = await crudInterface.paginate(rapify);
 
                 expect(result).to.have.keys(['pagination', 'documents']);
@@ -127,8 +127,8 @@ describe('mongoose CRUD interface', () => {
 
                 await User.create(docs);
 
-                let query = requestMock.pagination(1, pageSize, '_id', 'desc');
-                let rapify = requestMock.expressReq({ query });
+                let query = httpMocks.input.pagination(1, pageSize, '_id', 'desc');
+                let rapify = httpMocks.input.rapify({ query });
                 let result = await crudInterface.paginate(rapify);
 
                 expect(result).to.have.keys(['pagination', 'documents']);
@@ -137,8 +137,8 @@ describe('mongoose CRUD interface', () => {
                 expect(result).to.nested.include({ 'pagination.totalPages': totalPages });
                 expect(result).to.nested.include({ 'pagination.totalDocuments': total });
 
-                query = requestMock.pagination(2, pageSize, '_id', 'desc');
-                rapify = requestMock.expressReq({ query });
+                query = httpMocks.input.pagination(2, pageSize, '_id', 'desc');
+                rapify = httpMocks.input.rapify({ query });
                 result = await crudInterface.paginate(rapify);
 
                 expect(result).to.have.keys(['pagination', 'documents']);
@@ -161,8 +161,8 @@ describe('mongoose CRUD interface', () => {
                 await User.remove({});
                 await User.create(docs);
 
-                const query = requestMock.pagination(1, 20, 'name', 'asc');
-                const rapify = requestMock.expressReq({ query });
+                const query = httpMocks.input.pagination(1, 20, 'name', 'asc');
+                const rapify = httpMocks.input.rapify({ query });
                 const result = await crudInterface.paginate(rapify);
 
                 expect(result.documents).to.have.lengthOf(7);
@@ -181,7 +181,7 @@ describe('mongoose CRUD interface', () => {
             });
 
             it('should throw not found error', async () => {
-                const rapify = requestMock.expressReq({
+                const rapify = httpMocks.input.rapify({
                     params: {
                         id: ObjectId(),
                     },
@@ -192,7 +192,7 @@ describe('mongoose CRUD interface', () => {
             });
 
             it('should not update a non existant document', async () => {
-                const rapify = requestMock.expressReq({
+                const rapify = httpMocks.input.rapify({
                     params: { id: ObjectId() },
                     body: { name: 'test' },
                 });
@@ -202,7 +202,7 @@ describe('mongoose CRUD interface', () => {
             });
 
             it('should not delete a non existant document', async () => {
-                const rapify = requestMock.expressReq({
+                const rapify = httpMocks.input.rapify({
                     params: { id: ObjectId() },
                 });
 
@@ -211,7 +211,7 @@ describe('mongoose CRUD interface', () => {
             });
 
             it('should not paginate with invalid pagination options', async () => {
-                const rapify = requestMock.expressReq({
+                const rapify = httpMocks.input.rapify({
                     query: {},
                 });
 

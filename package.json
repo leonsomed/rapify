@@ -21,6 +21,7 @@
     "express-jwt": "^5.3.1",
     "mocha": "^5.2.0",
     "mockgoose": "^7.3.5",
-    "mongoose": "^5.2.2"
+    "mongoose": "^5.2.2",
+    "node-mocks-http": "^1.7.0"
   }
 }

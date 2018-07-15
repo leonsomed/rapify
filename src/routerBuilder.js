@@ -4,6 +4,7 @@ const constants = require('./constants');
 const asyncRoute = require('./middleware/asyncRoute');
 const endpointValidator = require('./middleware/endpointValidator');
 const mongooseCrudInterface = require('./crudInterfaces/mongoose');
+const util = require('./helpers/util');
 
 const allowedCrudOps = [
     constants.crud.create,
@@ -141,26 +142,28 @@ function parseEndpoints(controller) {
     const missingEndpoints = [];
 
     if (restify) {
-        if (!crudInterface) {
-            throw new Error(`crudInterface or model is required when restify is enabled for controller: ${prefix}`);
-        }
-
         // verify each restify operation has a corresponding CRUD interface operation
         let restOperations = {};
 
         if (typeof restify === 'boolean') {
             restOperations = {
-                [constants.crud.create]: constants.crud.create,
-                [constants.crud.read]: constants.crud.read,
-                [constants.crud.update]: constants.crud.update,
-                [constants.crud.delete]: constants.crud.delete,
-                [constants.crud.paginate]: constants.crud.paginate,
+                [constants.crud.create]: true,
+                [constants.crud.read]: true,
+                [constants.crud.update]: true,
+                [constants.crud.delete]: true,
+                [constants.crud.paginate]: true,
             };
         } else {
             restOperations = restify;
         }
 
-        Object.keys(restOperations).forEach((op) => {
+        const operationKeys = Object.keys(util.filterObj(restOperations, n => n));
+
+        if (!crudInterface && operationKeys.length) {
+            throw new Error(`crudInterface or model is required when restify is enabled for controller: ${prefix}`);
+        }
+
+        operationKeys.forEach((op) => {
             if (!crudInterface[op]) {
                 throw new Error(`crudInterface operation: ${op} is required because restify operation: ${op} is enabled for controller: ${prefix}`);
             }
@@ -174,15 +177,15 @@ function parseEndpoints(controller) {
     }
 
     // flatten endpoints and add properties
-    const entries = Object.entries(controller.endpoints);
-    const newEndpoints = controller.endpoints ? _.flatMapDeep(entries, ([route, endpoints]) => (
-        Object.entries(endpoints).map(([method, endpoint]) => ({
-            fullRoute: `${controller.prefix}${route}`,
-            relativeRoute: route,
-            method,
-            ...endpoint,
-        }))
-    )) : [];
+    const newEndpoints = controller.endpoints ?
+        _.flatMapDeep(Object.entries(controller.endpoints), ([route, endpoints]) => (
+            Object.entries(endpoints).map(([method, endpoint]) => ({
+                fullRoute: `${controller.prefix}${route}`,
+                relativeRoute: route,
+                method,
+                ...endpoint,
+            }))
+        )) : [];
 
     // inject any missing endpoints
     for (const missing of missingEndpoints) {

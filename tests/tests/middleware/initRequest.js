@@ -12,8 +12,8 @@ describe('initRequest', () => {
     });
 
     it('should initialize req.rapify to an empty object and call next without errors', () => {
-        initRequest(request, response, (...args) => {
-            expect(args).to.have.lengthOf(0);
+        initRequest(request, response, (error) => {
+            expect(error).to.eqls(undefined);
         });
 
         expect(request.rapify).to.eqls({});

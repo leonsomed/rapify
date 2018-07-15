@@ -1,4 +1,3 @@
-require('./setup');
 const bootstrap = require('./bootstrap');
 const appBuilder = require('./appBuilder');
 const constants = require('./constants');

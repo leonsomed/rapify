@@ -34,10 +34,39 @@ const mocks = {
                 },
             });
         },
+        rapify: {
+            default() {
+                const req = httpMocks.createRequest({
+                    method: 'GET',
+                    url: '/test/path?myid=312',
+                    query: {
+                        myid: '312',
+                    },
+                });
+
+                req.rapify = {};
+
+                return req;
+            },
+            endpoint(endpoint, bundle) {
+                const req = httpMocks.createRequest(bundle);
+
+                req.rapify = {
+                    rapify: {},
+                    _endpoint: endpoint,
+                };
+
+                return req;
+            },
+        },
     },
     response: {
-        default() {
-            return httpMocks.createResponse();
+        default(wasRouteHandled = false) {
+            const res = httpMocks.createResponse();
+
+            res.locals.wasRouteHandled = wasRouteHandled;
+
+            return res;
         },
     },
 };

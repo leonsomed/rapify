@@ -76,7 +76,7 @@ module.exports = {
                         },
                     },
                 },
-                customValidation: (input, req) => {
+                customValidation: (req) => {
                     if (req.rapify.input.id < 1000) {
                         throw new Error('id must be greater than 1000');
                     }

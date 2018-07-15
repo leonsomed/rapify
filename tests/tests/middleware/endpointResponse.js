@@ -12,8 +12,8 @@ describe('endpointResponse', () => {
     });
 
     it('should call next without arguments when req.locals.response is undefined', () => {
-        endpointResponse(request, response, (...args) => {
-            expect(args).to.have.lengthOf(0);
+        endpointResponse(request, response, (error) => {
+            expect(error).to.eqls(undefined);
         });
     });
 

@@ -58,7 +58,7 @@ describe('endpointError', () => {
         const jsonError = error.toJSON();
 
         expect(jsonError).to.contain.keys(['errors']);
-        expect(jsonError.errors).to.be.instanceOf(Array);
+        expect(jsonError.errors).to.be.an.instanceOf(Array);
 
         endpointError(error, req, res, () => {});
 

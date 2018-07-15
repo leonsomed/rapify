@@ -12,6 +12,7 @@ class ListError extends Error {
         const maxStatus = _.max(formattedErrors, n => n.status);
 
         this.type = 'ListError';
+        this.list = errors;
         this.errors = formattedErrors;
         this.status = maxStatus ? maxStatus.status : 500;
     }

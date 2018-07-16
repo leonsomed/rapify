@@ -90,7 +90,8 @@ function initializeFromOptions(options, builder) {
     builder.registerMiddleware(endpointErrorMiddleware, cMidLevels.error);
 }
 
-function appBuilder(options) {
+function appBuilder(opts) {
+    const options = opts || {};
     const middleware = [];
 
     const builder = {
@@ -127,7 +128,10 @@ function appBuilder(options) {
         },
     };
 
-    initializeFromOptions(options, builder);
+    if (options) {
+        initializeFromOptions(options, builder);
+    }
+
     builder.registerMiddleware(responseMiddleware, cMidLevels.postPublic);
     builder.registerMiddleware(responseMiddleware, cMidLevels.postPrivate);
 

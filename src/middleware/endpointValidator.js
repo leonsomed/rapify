@@ -28,54 +28,141 @@ validateJs.validators.requiredConditional = (value, options) => {
     return undefined;
 };
 
-const ignoreExtraFields = (input, rules = {}) => {
+function ignoreExtraFields(input, rules = {}) {
     const whiteList = {};
+    let rule = rules;
 
-    for (const [key, value] of Object.entries(rules)) {
-        if (value.__has_children) {
-            whiteList[key] = ignoreExtraFields(input[key] || null, value);
-        } else {
-            whiteList[key] = input[key];
+    if (Array.isArray(rule)) {
+        if (rule.length === 0 || rule.length > 1) {
+            throw new Error('missing array validation config');
+        }
+
+        rule = rule[0];
+    }
+
+    for (const [key, ruleProps] of Object.entries(rule)) {
+        if (key === '__has_children') {
+            continue;
+        }
+
+        if (ruleProps) {
+            if (ruleProps.__has_children) {
+                whiteList[key] = ignoreExtraFields(input[key] || {}, ruleProps);
+            } else {
+                whiteList[key] = input[key];
+            }
         }
     }
 
     return whiteList;
-};
+}
 
-const sanitize = (input, rules) => {
+function sanitize(originalInput, rules) {
+    if (!rules) {
+        return originalInput;
+    }
+
+    const input = originalInput;
+
+    for (const [key, originalRule] of Object.entries(rules)) {
+        let ruleIsArray = false;
+        let rule = originalRule;
+
+        if (Array.isArray(rule)) {
+            if (rule.length === 0 || rule.length > 1) {
+                throw new Error('missing array validation config');
+            }
+
+            ruleIsArray = true;
+            rule = rule[0];
+        }
+
+        const ruleIsNestedObject = Boolean(rule.__has_children);
+
+        if (!ruleIsNestedObject && !ruleIsArray) {
+            // primitive
+            input[key] = sanitizePrimitive(input[key], rule);
+        } else if (ruleIsNestedObject && !ruleIsArray) {
+            // nested object
+            input[key] = sanitizeNestedObject(input[key], rule);
+        } else if (!ruleIsNestedObject && ruleIsArray) {
+            // primitive array
+            input[key] = sanitizeArrayOfPrimitives(input[key], rule);
+        } else if (ruleIsNestedObject && ruleIsArray) {
+            // array of nested objects
+            input[key] = sanitizeArrayOfNestedObjects(input[key], rule);
+        } else {
+            throw new Error('unknown sanitation classification');
+        }
+    }
+
+    return _.pickBy(input, n => n !== undefined);
+}
+
+function sanitizePrimitive(input, rule) {
+    if (!rule) {
+        return input;
+    }
+
+    let value = input;
+
+    // apply default value if input is undefined
+    if (value === undefined) {
+        value = typeof rule.default === 'function' ? rule.default() : rule.default;
+    }
+
+    // apply sanitize function if available and value is not undefined
+    if (typeof rule.sanitize === 'function' && value !== undefined) {
+        value = rule.sanitize(value);
+    }
+
+    return value;
+}
+
+function sanitizeArrayOfPrimitives(input, rule) {
+    if (!rule) {
+        return input;
+    }
+
+    let value = input;
+
+    if (input === undefined) {
+        value = typeof rule.default === 'function' ? rule.default() : rule.default;
+    }
+
+    // if it is not an array with at least 1 element then return
+    if (!value || !Array.isArray(value) || !value.length) {
+        return value;
+    }
+
+    return value.map(n => sanitizePrimitive(n, rule));
+}
+
+function sanitizeNestedObject(input, rules) {
     if (!rules) {
         return input;
     }
 
-    const theInput = input;
+    const result = sanitize(input || {}, _.omit(rules, '__has_children'));
+    const hasKeys = Object.keys(result).length > 0;
 
-    for (const [key, rule] of Object.entries(rules)) {
-        if (rule.__has_children) {
-            const result = sanitize(input[key] || {}, _.omit(rule, '__has_children'));
+    return hasKeys ? result : input;
+}
 
-            if (Object.keys(result).length) {
-                theInput[key] = result;
-            }
-        } else {
-            // apply default value if input is undefined
-            if (input[key] === undefined) {
-                theInput[key] = typeof rule.default === 'function' ?
-                    rule.default(input) : rule.default;
-            } else {
-                theInput[key] = input[key];
-            }
-
-            // apply sanitize function if available and input is not undefined
-            if (typeof rule.sanitize === 'function' && theInput[key] !== undefined) {
-                theInput[key] = rule.sanitize(theInput[key]);
-            }
-        }
+function sanitizeArrayOfNestedObjects(input, rules) {
+    if (!rules) {
+        return input;
     }
 
-    return _.pickBy(theInput, n => n !== undefined);
-};
+    // if it is not an array with at least 1 element then return
+    if (!input || !Array.isArray(input) || !input.length) {
+        return input;
+    }
 
-const flattenRules = (rules, prefix = '') => {
+    return input.map(n => sanitizeNestedObject(n, rules));
+}
+
+function flattenRules(rules, prefix = '') {
     const newRules = {};
 
     for (const [key, rule] of Object.entries(rules)) {
@@ -91,21 +178,36 @@ const flattenRules = (rules, prefix = '') => {
     }
 
     return newRules;
-};
+}
 
-const bindParams = (constraints, input) => {
-    if (constraints && constraints.requiredConditional && typeof constraints.requiredConditional.condition === 'function') {
+function bindParams(rule, input) {
+    let constraints;
+
+    if (Array.isArray(rule)) {
+        if (rule.length === 0 || rule.length > 1) {
+            throw new Error('missing array validation config');
+        }
+
+        constraints = rule[0].constraints || {};
+    } else {
+        constraints = rule.constraints || {};
+    }
+
+    if (constraints.requiredConditional && typeof constraints.requiredConditional.condition === 'function') {
         // eslint-disable-next-line
         constraints.requiredConditional._condition = constraints.requiredConditional.condition.bind(null, input);
     }
-
-    return constraints;
-};
+}
 
 const validate = (input, rules) => {
     const newRules = flattenRules(rules);
-    const constraints = _.mapValues(newRules, rule => bindParams(rule.constraints, input) || {});
+    const constraints = _.mapValues(newRules, (rule) => {
+        bindParams(rule, input);
+
+        return rule || {};
+    });
     const errors = validateJs(input, constraints);
+
     return _.flatMapDeep(errors, (message, key) => new InvalidApiParameterError(key, message));
 };
 
@@ -137,21 +239,21 @@ const validateRequest = async (req, res, next) => {
         }
 
         if (!rule.keepExtraFields) {
-            props = ignoreExtraFields(props, rule.props);
+            // props = ignoreExtraFields(props, rule.props);
             // do not ignore params because they are part of the URL
             // params = ignoreExtraFields(params, rule.params);
-            query = ignoreExtraFields(query, rule.query);
+            // query = ignoreExtraFields(query, rule.query);
             body = ignoreExtraFields(body, rule.body);
         }
 
-        props = sanitize(props, rule.props || {});
-        params = sanitize(params, rule.params || {});
-        query = sanitize(query, rule.query || {});
+        // props = sanitize(props, rule.props || {});
+        // params = sanitize(params, rule.params || {});
+        // query = sanitize(query, rule.query || {});
         body = sanitize(body, rule.body || {});
 
-        const propsErrors = validate(props, rule.props || {});
-        const paramsErrors = validate(params, rule.params || {});
-        const queryErrors = validate(query, rule.query || {});
+        const propsErrors = []; // validate(props, rule.props || {});
+        const paramsErrors = []; // validate(params, rule.params || {});
+        const queryErrors = []; // validate(query, rule.query || {});
         const bodyErrors = validate(body, rule.body || {});
 
         const allErrors = [

@@ -46,5 +46,6 @@ module.exports = {
         'no-restricted-syntax': [0, 'ForOfStatement'],
         'default-case': [0],
         'no-console': ['error', { allow: ['log', 'warn', 'error'] }],
+        'no-use-before-define': ['error', { 'functions': false, 'classes': true }]
     }
 };

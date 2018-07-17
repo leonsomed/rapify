@@ -30,15 +30,7 @@ validateJs.validators.requiredConditional = (value, options) => {
 
 function ignoreExtraFields(input, rules = {}) {
     const whiteList = {};
-    let rule = rules;
-
-    if (Array.isArray(rule)) {
-        if (rule.length === 0 || rule.length > 1) {
-            throw new Error('missing array validation config');
-        }
-
-        rule = rule[0];
-    }
+    const rule = rules;
 
     for (const [key, ruleProps] of Object.entries(rule)) {
         if (key === '__has_children') {
@@ -64,19 +56,8 @@ function sanitize(originalInput, rules) {
 
     const input = originalInput;
 
-    for (const [key, originalRule] of Object.entries(rules)) {
-        let ruleIsArray = false;
-        let rule = originalRule;
-
-        if (Array.isArray(rule)) {
-            if (rule.length === 0 || rule.length > 1) {
-                throw new Error('missing array validation config');
-            }
-
-            ruleIsArray = true;
-            rule = rule[0];
-        }
-
+    for (const [key, rule] of Object.entries(rules)) {
+        const ruleIsArray = Boolean(rule.__is_array);
         const ruleIsNestedObject = Boolean(rule.__has_children);
 
         if (!ruleIsNestedObject && !ruleIsArray) {
@@ -172,7 +153,7 @@ function flattenRules(rules, prefix = '') {
             for (const [subRuleKey, subRule] of Object.entries(subRules)) {
                 newRules[subRuleKey] = subRule;
             }
-        } else if (key !== '__has_children') {
+        } else if (key !== '__has_children' && key !== '__is_array') {
             newRules[`${prefix}${key}`] = rule;
         }
     }
@@ -181,25 +162,16 @@ function flattenRules(rules, prefix = '') {
 }
 
 function bindParams(rule, input) {
-    let constraints;
+    const constraints = rule.constraints || {};
+    const requiredConditional = constraints.requiredConditional || {};
 
-    if (Array.isArray(rule)) {
-        if (rule.length === 0 || rule.length > 1) {
-            throw new Error('missing array validation config');
-        }
-
-        constraints = rule[0].constraints || {};
-    } else {
-        constraints = rule.constraints || {};
-    }
-
-    if (constraints.requiredConditional && typeof constraints.requiredConditional.condition === 'function') {
+    if (requiredConditional && typeof requiredConditional.condition === 'function') {
         // eslint-disable-next-line
-        constraints.requiredConditional._condition = constraints.requiredConditional.condition.bind(null, input);
+        requiredConditional._condition = requiredConditional.condition.bind(null, input);
     }
 }
 
-const validate = (input, rules) => {
+function validate(input, rules) {
     const newRules = flattenRules(rules);
     const constraints = _.mapValues(newRules, (rule) => {
         bindParams(rule, input);
@@ -209,7 +181,33 @@ const validate = (input, rules) => {
     const errors = validateJs(input, constraints);
 
     return _.flatMapDeep(errors, (message, key) => new InvalidApiParameterError(key, message));
-};
+}
+
+function formatRules(rules) {
+    // TODO move this to an initialization so that it only runs once
+    // TODO add logic to assign __has_children that way it does not
+    // need to be specified in the endpoints
+    if (!rules) {
+        return {};
+    }
+
+    for (let [key, rule] of Object.entries(rules)) {
+        if (Array.isArray(rule)) {
+            if (rule.length === 0 || rule.length > 1) {
+                throw new Error('missing array validation config');
+            }
+
+            rule = rules[key] = rule[0];
+            rule.__is_array = true;
+        }
+
+        if (rule.__has_children) {
+            formatRules(rule);
+        }
+    }
+
+    return rules;
+}
 
 const validateRequest = async (req, res, next) => {
     try {
@@ -218,7 +216,13 @@ const validateRequest = async (req, res, next) => {
             return;
         }
 
-        const rule = req.rapify._endpoint;
+        const rule = {
+            ...req.rapify._endpoint,
+            params: formatRules(req.rapify._endpoint.params),
+            query: formatRules(req.rapify._endpoint.query),
+            body: formatRules(req.rapify._endpoint.body),
+            props: formatRules(req.rapify._endpoint.props),
+        };
 
         let params = req.params;
         let query = req.query;
@@ -246,15 +250,15 @@ const validateRequest = async (req, res, next) => {
             body = ignoreExtraFields(body, rule.body);
         }
 
-        // props = sanitize(props, rule.props || {});
-        // params = sanitize(params, rule.params || {});
-        // query = sanitize(query, rule.query || {});
-        body = sanitize(body, rule.body || {});
+        // props = sanitize(props, rule.props);
+        // params = sanitize(params, rule.params);
+        // query = sanitize(query, rule.query);
+        body = sanitize(body, rule.body);
 
-        const propsErrors = []; // validate(props, rule.props || {});
-        const paramsErrors = []; // validate(params, rule.params || {});
-        const queryErrors = []; // validate(query, rule.query || {});
-        const bodyErrors = validate(body, rule.body || {});
+        const propsErrors = []; // validate(props, rule.props);
+        const paramsErrors = []; // validate(params, rule.params);
+        const queryErrors = []; // validate(query, rule.query);
+        const bodyErrors = validate(body, rule.body);
 
         const allErrors = [
             ...bodyErrors,

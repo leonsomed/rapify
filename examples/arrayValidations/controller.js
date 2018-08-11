@@ -23,7 +23,6 @@ module.exports = {
                     },
                     // nested objects
                     user: {
-                        __has_children: true, // to be removed
 
                         name: {
                             constraints: {
@@ -59,8 +58,6 @@ module.exports = {
                     }],
                     // array of objects
                     users: [{
-                        __has_children: true, // to be removed
-
                         name: {
                             constraints: {
                                 format: {
@@ -80,8 +77,6 @@ module.exports = {
                             default: () => ["12", 12],
                         }],
                         errors: [{
-                            __has_children: true, // to be removed
-
                             type: {
                                 constraints: {
                                     presence: true,

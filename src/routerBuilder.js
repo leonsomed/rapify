@@ -40,6 +40,7 @@ function buildRestEndpoint(operation, controller) {
                 fullRoute: `${controller.prefix}/`,
                 relativeRoute: '/',
                 method: POST,
+                // formatRules
             };
         }
 
@@ -50,6 +51,7 @@ function buildRestEndpoint(operation, controller) {
                 fullRoute: `${controller.prefix}/:id`,
                 relativeRoute: '/:id',
                 method: GET,
+                // formatRules
             };
         }
 
@@ -60,6 +62,7 @@ function buildRestEndpoint(operation, controller) {
                 fullRoute: `${controller.prefix}/:id`,
                 relativeRoute: '/:id',
                 method: POST,
+                // formatRules
             };
         }
 
@@ -70,6 +73,7 @@ function buildRestEndpoint(operation, controller) {
                 fullRoute: `${controller.prefix}/:id`,
                 relativeRoute: '/:id',
                 method: DELETE,
+                // formatRules
             };
         }
 
@@ -80,10 +84,8 @@ function buildRestEndpoint(operation, controller) {
                 fullRoute: `${controller.prefix}/`,
                 relativeRoute: '/',
                 method: GET,
-                params: {
+                params: formatRules({
                     pagination: {
-                        __has_children: true,
-
                         page: {
                             constraints: {
                                 numericality: {
@@ -129,7 +131,7 @@ function buildRestEndpoint(operation, controller) {
                             default: 'desc',
                         },
                     },
-                },
+                }),
             };
         }
     }
@@ -183,7 +185,7 @@ function parseEndpoints(controller) {
                 fullRoute: `${controller.prefix}${route}`,
                 relativeRoute: route,
                 method,
-                ...endpoint,
+                ...formatEndpointRules(endpoint),
             }))
         )) : [];
 
@@ -200,6 +202,62 @@ function parseEndpoints(controller) {
     }
 
     return newEndpoints;
+}
+
+function formatEndpointRules(endpoint) {
+    return {
+        ...endpoint,
+        ...endpoint.params && { params: formatRules(endpoint.params) },
+        ...endpoint.body && { body: formatRules(endpoint.body) },
+        ...endpoint.query && { query: formatRules(endpoint.query) },
+        ...endpoint.props && { props: formatRules(endpoint.props) },
+    };
+}
+
+function formatRules(rules) {
+    if (!rules) {
+        return {};
+    }
+
+    for (const [, rule] of Object.entries(rules)) {
+        let isArray = false;
+        let hasChildren = false;
+
+        if (Array.isArray(rule)) {
+            if (rule.length === 0 || rule.length > 1) {
+                throw new Error('missing array validation config');
+            }
+
+            isArray = true;
+
+            if (ruleHasChildren(rule[0])) {
+                rule[0].__has_children = true;
+                hasChildren = true;
+            }
+        } else if (ruleHasChildren(rule)) {
+            rule.__has_children = true;
+            hasChildren = true;
+        }
+
+        if (hasChildren) {
+            formatRules(isArray ? rule[0] : rule);
+        }
+    }
+
+    return rules;
+}
+
+function ruleHasChildren(obj) {
+    const knownKeys = [
+        'arrayConstraints',
+        'constraints',
+        'sanitize',
+        'default',
+    ];
+    const strippedObj = _.omit(obj, knownKeys);
+    const keys = Object.keys(strippedObj);
+
+    return Boolean(keys.length);
 }
 
 function getCrudOpHandler(xCrudOp, crudInterface) {

@@ -243,7 +243,7 @@ function buildObjectFromPath(chain, value) {
     return result;
 }
 
-function validate(input, rules) {
+function validate(input, rules = {}) {
     const newRules = flattenRules(rules);
     const regularRules = {};
     const arrayRules = {};
@@ -276,8 +276,6 @@ function validate(input, rules) {
         const nextRule = arrayRules[ruleKey][0];
         const nextInput = safeAccess(input, ruleKey.split('.'));
 
-        // TODO you can implement the array level constraints like size of array
-
         const inputPath = ruleKey;
 
         if (nextInput && !Array.isArray(nextInput)) {
@@ -285,6 +283,8 @@ function validate(input, rules) {
                 ...errors,
                 new InvalidApiParameterError(inputPath, 'must be an array'),
             ];
+        } else if (false) {
+            console.log('TODO you can implement the array level constraints like size of array');
         } else if (nextInput && nextInput.length) {
             for (let i = 0; i < nextInput.length; i += 1) {
                 const indexInputPath = `${inputPath}.${i}`;
@@ -301,35 +301,6 @@ function validate(input, rules) {
     return errors;
 }
 
-function formatRules(rules) {
-    return rules;
-
-    // TODO move this to an initialization so that it only runs once
-    // TODO add logic to assign __has_children that way it does not
-    // need to be specified in the endpoints
-    if (!rules) {
-        return {};
-    }
-
-    for (const [, rule] of Object.entries(rules)) {
-        if (Array.isArray(rule)) {
-            if (rule.length === 0 || rule.length > 1) {
-                throw new Error('missing array validation config');
-            }
-
-            // rule = rules[key] = rule[0];
-            rule.__is_array = true;
-        }
-
-        if (rule.__is_array && rule[0].__has_children) {
-            rule.__has_children = true;
-            formatRules(rule);
-        }
-    }
-
-    return rules;
-}
-
 const validateRequest = async (req, res, next) => {
     try {
         if (res.locals.wasRouteHandled) {
@@ -339,10 +310,10 @@ const validateRequest = async (req, res, next) => {
 
         const rule = {
             ...req.rapify._endpoint,
-            params: formatRules(req.rapify._endpoint.params),
-            query: formatRules(req.rapify._endpoint.query),
-            body: formatRules(req.rapify._endpoint.body),
-            props: formatRules(req.rapify._endpoint.props),
+            params: req.rapify._endpoint.params,
+            query: req.rapify._endpoint.query,
+            body: req.rapify._endpoint.body,
+            props: req.rapify._endpoint.props,
         };
 
         let params = req.params;
@@ -364,21 +335,21 @@ const validateRequest = async (req, res, next) => {
         }
 
         if (!rule.keepExtraFields) {
-            // props = ignoreExtraFields(props, rule.props);
+            props = ignoreExtraFields(props, rule.props);
             // do not ignore params because they are part of the URL
             // params = ignoreExtraFields(params, rule.params);
-            // query = ignoreExtraFields(query, rule.query);
+            query = ignoreExtraFields(query, rule.query);
             body = ignoreExtraFields(body, rule.body);
         }
 
-        // props = sanitize(props, rule.props);
-        // params = sanitize(params, rule.params);
-        // query = sanitize(query, rule.query);
+        props = sanitize(props, rule.props);
+        params = sanitize(params, rule.params);
+        query = sanitize(query, rule.query);
         body = sanitize(body, rule.body);
 
-        const propsErrors = []; // validate(props, rule.props);
-        const paramsErrors = []; // validate(params, rule.params);
-        const queryErrors = []; // validate(query, rule.query);
+        const propsErrors = validate(props, rule.props);
+        const paramsErrors = validate(params, rule.params);
+        const queryErrors = validate(query, rule.query);
         const bodyErrors = validate(body, rule.body);
 
         const allErrors = [

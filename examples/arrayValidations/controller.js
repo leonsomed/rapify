@@ -47,6 +47,13 @@ module.exports = {
                     },
                     // array of primitives
                     ages: [{
+                        arrayConstraints: {
+                            length: {
+                                minimum: 1,
+                                maximum: 3,
+                                message: 'at least one element is required',
+                            },
+                        },
                         constraints: {
                             format: {
                                 pattern: /abc/,
@@ -88,6 +95,12 @@ module.exports = {
                                 // default: 'error',
                             },
                             ages: [{
+                                arrayConstraints: {
+                                    length: {
+                                        minimum: 1,
+                                        message: 'at least one element is required',
+                                    },
+                                },
                                 constraints: {
                                     // presence: false,
                                     numericality: {

@@ -4,6 +4,11 @@ const validateJs = require('validate.js');
 const InvalidApiParameterError = require('../errors/invalidApiParameter');
 const ListError = require('../errors/list');
 
+const hiddenProps = [
+    '__has_children',
+    '__is_array',
+];
+
 validateJs.validators.custom = (value, options, key, attributes) => {
     if (typeof options.validate === 'function' && value) {
         const success = options.validate(value, options, key, attributes);
@@ -190,7 +195,7 @@ function flattenRules(rules, prefix = '') {
             for (const [subRuleKey, subRule] of Object.entries(subRules)) {
                 newRules[subRuleKey] = subRule;
             }
-        } else if (key !== '__has_children' && key !== '__is_array') {
+        } else if (hiddenProps.indexOf(key) === -1) {
             newRules[`${prefix}${key}${posfix}`] = rule;
         }
     }
@@ -200,11 +205,18 @@ function flattenRules(rules, prefix = '') {
 
 function bindParams(rule, input) {
     const constraints = rule.constraints || {};
+    const arrayConstraints = rule.arrayConstraints || {};
     const requiredConditional = constraints.requiredConditional || {};
+    const requiredConditionalArray = arrayConstraints.requiredConditional || {};
 
     if (typeof requiredConditional.condition === 'function') {
         // eslint-disable-next-line
         requiredConditional._condition = requiredConditional.condition.bind(null, input);
+    }
+
+    if (typeof requiredConditionalArray.condition === 'function') {
+        // eslint-disable-next-line
+        requiredConditionalArray._condition = requiredConditionalArray.condition.bind(null, input);
     }
 }
 
@@ -283,8 +295,13 @@ function validate(input, rules = {}) {
                 ...errors,
                 new InvalidApiParameterError(inputPath, 'must be an array'),
             ];
-        } else if (false) {
-            console.log('TODO you can implement the array level constraints like size of array');
+        } else if (nextRule.arrayConstraints) {
+            const obj = buildObjectFromPath(inputPath.split('.'), nextInput);
+            const nextErrors = validate(obj, { [inputPath]: nextRule.arrayConstraints });
+            errors = [
+                ...errors,
+                ...nextErrors,
+            ];
         } else if (nextInput && nextInput.length) {
             for (let i = 0; i < nextInput.length; i += 1) {
                 const indexInputPath = `${inputPath}.${i}`;

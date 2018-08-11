@@ -27,15 +27,14 @@ validateJs.validators.custom = (value, options) => {
 
 function ignoreExtraFields(input, rules = {}) {
     if (!input) {
-        return input;
+        return {};
     }
 
     const whiteList = {};
-    const rule = rules;
-    const entries = Object.entries(rule);
+    const entries = Object.entries(rules);
 
     if (!entries.length) {
-        return input;
+        return {};
     }
 
     for (const [key, ruleProps] of entries) {

@@ -41,7 +41,7 @@ module.exports = {
         ],
         'no-underscore-dangle': [
             'error',
-            { allow: ['_id', '_getData', '_condition', '_endpoint', '__has_children', '__is_array'] }
+            { allow: ['_id', '_getData', '_validate', '_endpoint', '__has_children', '__is_array'] }
         ],
         'no-restricted-syntax': [0, 'ForOfStatement'],
         'default-case': [0],

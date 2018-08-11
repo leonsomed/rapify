@@ -9,24 +9,16 @@ const hiddenProps = [
     '__is_array',
 ];
 
-validateJs.validators.custom = (value, options, key, attributes) => {
-    if (typeof options.validate === 'function' && value) {
-        const success = options.validate(value, options, key, attributes);
+validateJs.validators.custom = (value, options) => {
+    if (typeof options._validate === 'function') {
+        const result = options._validate(value);
 
-        if (!success) {
-            return options.message || 'not valid format';
-        }
-    } else if (value) {
-        return options.message || 'not valid format';
-    }
+        if (result) {
+            if (typeof result === 'string') {
+                return result;
+            }
 
-    return undefined;
-};
-
-validateJs.validators.requiredConditional = (value, options) => {
-    if (typeof options._condition === 'function') {
-        if (options._condition() && value === undefined) {
-            return options.message || 'this field is required';
+            return options.message || 'failed validation';
         }
     }
 
@@ -206,17 +198,17 @@ function flattenRules(rules, prefix = '') {
 function bindParams(rule, input) {
     const constraints = rule.constraints || {};
     const arrayConstraints = rule.arrayConstraints || {};
-    const requiredConditional = constraints.requiredConditional || {};
-    const requiredConditionalArray = arrayConstraints.requiredConditional || {};
+    const custom = constraints.custom || {};
+    const customArray = arrayConstraints.custom || {};
 
-    if (typeof requiredConditional.condition === 'function') {
+    if (typeof custom.validate === 'function') {
         // eslint-disable-next-line
-        requiredConditional._condition = requiredConditional.condition.bind(null, input);
+        custom._validate = custom.validate.bind(null, input);
     }
 
-    if (typeof requiredConditionalArray.condition === 'function') {
+    if (typeof customArray.validate === 'function') {
         // eslint-disable-next-line
-        requiredConditionalArray._condition = requiredConditionalArray.condition.bind(null, input);
+        customArray._validate = customArray.validate.bind(null, input);
     }
 }
 
@@ -255,7 +247,11 @@ function buildObjectFromPath(chain, value) {
     return result;
 }
 
-function validate(input, rules = {}) {
+function validate(input, rules = {}, allInput) {
+    if (allInput === undefined) {
+        allInput = input;
+    }
+
     const newRules = flattenRules(rules);
     const regularRules = {};
     const arrayRules = {};
@@ -272,7 +268,7 @@ function validate(input, rules = {}) {
     }
 
     const regularConstraints = _.mapValues(regularRules, (rule) => {
-        bindParams(rule, input);
+        bindParams(rule, allInput);
 
         return rule.length ? rule : rule.constraints || {};
     });
@@ -297,7 +293,7 @@ function validate(input, rules = {}) {
             ];
         } else if (nextRule.arrayConstraints) {
             const obj = buildObjectFromPath(inputPath.split('.'), nextInput);
-            const nextErrors = validate(obj, { [inputPath]: nextRule.arrayConstraints });
+            const nextErrors = validate(obj, { [inputPath]: nextRule.arrayConstraints }, allInput);
             errors = [
                 ...errors,
                 ...nextErrors,
@@ -306,7 +302,7 @@ function validate(input, rules = {}) {
             for (let i = 0; i < nextInput.length; i += 1) {
                 const indexInputPath = `${inputPath}.${i}`;
                 const obj = buildObjectFromPath(indexInputPath.split('.'), nextInput[i]);
-                const nextErrors = validate(obj, { [indexInputPath]: nextRule });
+                const nextErrors = validate(obj, { [indexInputPath]: nextRule }, allInput);
                 errors = [
                     ...errors,
                     ...nextErrors,

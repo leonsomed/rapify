@@ -23,7 +23,6 @@ module.exports = {
                     },
                     // nested objects
                     user: {
-
                         name: {
                             constraints: {
                                 presence: true,
@@ -36,6 +35,14 @@ module.exports = {
                         },
                         ages: [{
                             constraints: {
+                                custom: {
+                                    validate(input, value) {
+                                        if (input.username === 'leos') {
+                                            return 'what is going on man';
+                                        }
+                                    },
+                                    message: 'wuut',
+                                },
                                 format: {
                                     pattern: /abc/,
                                     message: '^value must be abc!',

@@ -21,7 +21,7 @@ module.exports = {
                             },
                         },
                     },
-                    // // nested objects
+                    // nested objects
                     user: {
                         __has_children: true, // to be removed
 
@@ -30,19 +30,19 @@ module.exports = {
                                 presence: true,
                                 format: {
                                     pattern: /abc/,
-                                    message: '^the error!',
+                                    message: '^value must be abc!',
                                 },
                             },
-                            default: 'sir leon',
+                            default: 'abc',
                         },
                         ages: [{
                             constraints: {
                                 format: {
                                     pattern: /abc/,
-                                    message: '^the error!',
+                                    message: '^value must be abc!',
                                 },
                             },
-                            default: () => ['hha'],
+                            default: () => ['abc'],
                             // sanitize: val => [...val, 'wuut'],
                         }],
                     },
@@ -51,13 +51,13 @@ module.exports = {
                         constraints: {
                             format: {
                                 pattern: /abc/,
-                                message: '^the error!',
+                                message: '^value must be abc!',
                             },
                         },
-                        // default: () => ['hha'],
+                        default: () => ['abc'],
                         // sanitize: val => [...val, 'wuut'],
                     }],
-                    // // // array of objects
+                    // array of objects
                     users: [{
                         __has_children: true, // to be removed
 
@@ -65,40 +65,42 @@ module.exports = {
                             constraints: {
                                 format: {
                                     pattern: /abc/,
-                                    message: '^the error!',
+                                    message: '^value must be abc!',
                                 },
                             },
-                            default: 'abcde',
+                            default: 'abc',
                         },
                         ages: [{
                             constraints: {
-                                format: {
-                                    pattern: /[0-9]+/,
-                                    message: '^the error!',
+                                numericality: {
+                                    lessThanOrEqualTo: 100,
                                 },
                             },
-                            default: () => [12, 123],
+                            sanitize: val => +val,
+                            default: () => ["12", 12],
                         }],
                         errors: [{
                             __has_children: true, // to be removed
 
                             type: {
                                 constraints: {
+                                    presence: true,
                                     format: {
                                         pattern: /error/,
-                                        message: '^the error!',
+                                        message: '^must equal error!',
                                     },
                                 },
-                                default: 'error',
+                                // default: 'error',
                             },
                             ages: [{
                                 constraints: {
-                                    format: {
-                                        pattern: /[0-9]+/,
-                                        message: '^the error!',
+                                    // presence: false,
+                                    numericality: {
+                                        // lessThanOrEqualTo: 100,
                                     },
                                 },
-                                default: () => [12, 123],
+                                sanitize: val => +val,
+                                // default: () => [12, 123],
                             }],
                         }],
                     }],

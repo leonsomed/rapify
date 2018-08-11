@@ -72,8 +72,9 @@ function sanitize(originalInput, rules) {
     const input = originalInput;
 
     for (const [key, rule] of Object.entries(rules)) {
-        const ruleIsArray = Boolean(rule.__is_array);
-        const ruleIsNestedObject = Boolean(rule.__has_children);
+        const ruleIsArray = Array.isArray(rule);
+        const ruleIsNestedObject = Boolean(rule.__has_children ||
+            (ruleIsArray && rule[0].__has_children));
 
         if (!ruleIsNestedObject && !ruleIsArray) {
             // primitive
@@ -91,14 +92,14 @@ function sanitize(originalInput, rules) {
             }
         } else if (!ruleIsNestedObject && ruleIsArray) {
             // primitive array
-            const temp = sanitizeArrayOfPrimitives(input[key], rule);
+            const temp = sanitizeArrayOfPrimitives(input[key], rule[0]);
 
             if (temp !== undefined) {
                 input[key] = temp;
             }
         } else if (ruleIsNestedObject && ruleIsArray) {
             // array of nested objects
-            const temp = sanitizeArrayOfNestedObjects(input[key], rule);
+            const temp = sanitizeArrayOfNestedObjects(input[key], rule[0]);
 
             if (temp !== undefined) {
                 input[key] = temp;
@@ -177,15 +178,20 @@ function sanitizeArrayOfNestedObjects(input, rules) {
 function flattenRules(rules, prefix = '') {
     const newRules = {};
 
-    for (const [key, rule] of Object.entries(rules)) {
-        if (rule.__has_children) {
-            const subRules = flattenRules(rule, `${prefix}${key}.`);
+    for (const [key, originalRule] of Object.entries(rules)) {
+        const rule = originalRule;
+        // const rule = originalRule.__is_array ? originalRule[0] : originalRule;
+        // const posfix = rule.__is_array ? '.n' : '';
+        const posfix = '';
+
+        if (originalRule.__has_children) {
+            const subRules = flattenRules(rule, `${prefix}${key}${posfix}.`);
 
             for (const [subRuleKey, subRule] of Object.entries(subRules)) {
                 newRules[subRuleKey] = subRule;
             }
         } else if (key !== '__has_children' && key !== '__is_array') {
-            newRules[`${prefix}${key}`] = rule;
+            newRules[`${prefix}${key}${posfix}`] = rule;
         }
     }
 
@@ -202,19 +208,102 @@ function bindParams(rule, input) {
     }
 }
 
+function safeAccess(obj, chain) {
+    if (!chain || !chain.length) {
+        return obj;
+    }
+
+    let temp = obj;
+    for (const n of chain) {
+        if (temp) {
+            temp = temp[n];
+        } else {
+            return temp;
+        }
+    }
+
+    return temp;
+}
+
+function buildObjectFromPath(chain, value) {
+    if (!chain || !chain.length) {
+        return null;
+    }
+
+    let temp = {};
+    const result = temp;
+    for (let i = 0; i < chain.length; i += 1) {
+        if (i === chain.length - 1) {
+            temp = temp[chain[i]] = value;
+        } else {
+            temp = temp[chain[i]] = {};
+        }
+    }
+
+    return result;
+}
+
 function validate(input, rules) {
     const newRules = flattenRules(rules);
-    const constraints = _.mapValues(newRules, (rule) => {
+    const regularRules = {};
+    const arrayRules = {};
+
+    const ruleKeys = Object.keys(newRules);
+    for (const key of ruleKeys) {
+        const next = newRules[key];
+
+        if (Array.isArray(next)) {
+            arrayRules[key] = next;
+        } else {
+            regularRules[key] = next;
+        }
+    }
+
+    const regularConstraints = _.mapValues(regularRules, (rule) => {
         bindParams(rule, input);
 
-        return rule.constraints || {};
+        return rule.length ? rule : rule.constraints || {};
     });
-    const errors = validateJs(input, constraints);
 
-    return _.flatMapDeep(errors, (message, key) => new InvalidApiParameterError(key, message));
+    let errors = validateJs(input, regularConstraints);
+    errors = _.flatMapDeep(
+        errors,
+        (message, key) => new InvalidApiParameterError(key, message),
+    );
+
+    const arrayRulesKeys = Object.keys(arrayRules);
+    for (const ruleKey of arrayRulesKeys) {
+        const nextRule = arrayRules[ruleKey][0];
+        const nextInput = safeAccess(input, ruleKey.split('.'));
+
+        // TODO you can implement the array level constraints like size of array
+
+        const inputPath = ruleKey;
+
+        if (nextInput && !Array.isArray(nextInput)) {
+            errors = [
+                ...errors,
+                new InvalidApiParameterError(inputPath, 'must be an array'),
+            ];
+        } else if (nextInput && nextInput.length) {
+            for (let i = 0; i < nextInput.length; i += 1) {
+                const indexInputPath = `${inputPath}.${i}`;
+                const obj = buildObjectFromPath(indexInputPath.split('.'), nextInput[i]);
+                const nextErrors = validate(obj, { [indexInputPath]: nextRule });
+                errors = [
+                    ...errors,
+                    ...nextErrors,
+                ];
+            }
+        }
+    }
+
+    return errors;
 }
 
 function formatRules(rules) {
+    return rules;
+
     // TODO move this to an initialization so that it only runs once
     // TODO add logic to assign __has_children that way it does not
     // need to be specified in the endpoints
@@ -222,17 +311,18 @@ function formatRules(rules) {
         return {};
     }
 
-    for (let [key, rule] of Object.entries(rules)) {
+    for (const [, rule] of Object.entries(rules)) {
         if (Array.isArray(rule)) {
             if (rule.length === 0 || rule.length > 1) {
                 throw new Error('missing array validation config');
             }
 
-            rule = rules[key] = rule[0];
+            // rule = rules[key] = rule[0];
             rule.__is_array = true;
         }
 
-        if (rule.__has_children) {
+        if (rule.__is_array && rule[0].__has_children) {
+            rule.__has_children = true;
             formatRules(rule);
         }
     }

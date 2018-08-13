@@ -1,4 +1,5 @@
 const httpMocks = require('node-mocks-http');
+const routerBuilder = require('../../src/routerBuilder');
 
 const mocks = {
     input: {
@@ -53,7 +54,7 @@ const mocks = {
 
                 req.rapify = {
                     rapify: {},
-                    _endpoint: endpoint,
+                    _endpoint: routerBuilder.formatEndpointRules(endpoint),
                 };
 
                 return req;

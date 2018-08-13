@@ -219,6 +219,12 @@ function formatRules(rules) {
         return {};
     }
 
+    rules = _.omit(rules, [
+        '__has_children',
+        '__is_array',
+        'arrayConstraints',
+    ]);
+
     for (const [, rule] of Object.entries(rules)) {
         let isArray = false;
         let hasChildren = false;
@@ -366,4 +372,6 @@ function fromController(controller) {
 
 module.exports = {
     fromController,
+    formatRules,
+    formatEndpointRules,
 };

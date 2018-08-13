@@ -15,6 +15,7 @@ module.exports = {
                     // primitive
                     username: {
                         constraints: {
+                            presence: true,
                             format: {
                                 pattern: /[a-zA-Z]{4,20}/,
                                 message: '^name must be 4 to 20 characters long.',
@@ -27,95 +28,108 @@ module.exports = {
                             constraints: {
                                 presence: true,
                                 format: {
-                                    pattern: /abc/,
-                                    message: '^value must be abc!',
+                                    pattern: /[a-zA-Z]{3,20}/,
+                                    message: '^must include characters a through z',
                                 },
                             },
-                            default: 'abc',
                         },
                         ages: [{
+                            arrayConstraints: {
+                                presence: true,
+                                length: {
+                                    minimum: 1,
+                                    message: 'at least one element is required',
+                                },
+                            },
                             constraints: {
                                 custom: {
                                     validate(input, value) {
                                         if (input.username === 'leos') {
-                                            return 'what is going on man';
+                                            return 'leos is not a valid username';
                                         }
+
+                                        return undefined;
                                     },
-                                    message: 'wuut',
-                                },
-                                format: {
-                                    pattern: /abc/,
-                                    message: '^value must be abc!',
                                 },
                             },
-                            default: () => ['abc'],
-                            // sanitize: val => [...val, 'wuut'],
                         }],
                     },
                     // array of primitives
                     ages: [{
                         arrayConstraints: {
+                            presence: true,
                             length: {
-                                minimum: 1,
+                                minimum: 2,
                                 maximum: 3,
-                                message: 'at least one element is required',
+                                tooShort: 'at least two elements are required',
+                                tooLong: 'at most three elements',
                             },
                         },
                         constraints: {
-                            format: {
-                                pattern: /abc/,
-                                message: '^value must be abc!',
+                            numericality: {
+                                integerOnly: true,
+                                greaterThanOrEqualTo: 18,
                             },
                         },
-                        default: () => ['abc'],
-                        // sanitize: val => [...val, 'wuut'],
+                        sanitize: val => +val,
                     }],
                     // array of objects
                     users: [{
+                        arrayConstraints: {
+                            presence: true,
+                            length: {
+                                minimum: 1,
+                                tooShort: 'at least one element is required',
+                            },
+                        },
+
                         name: {
                             constraints: {
+                                presence: true,
                                 format: {
-                                    pattern: /abc/,
-                                    message: '^value must be abc!',
+                                    pattern: /[a-zA-Z]{3,20}/,
+                                    message: '^must contain characters a through z!',
                                 },
                             },
-                            default: 'abc',
                         },
                         ages: [{
+                            arrayConstraints: {
+                                presence: true,
+                                length: {
+                                    minimum: 1,
+                                    tooShort: 'at least one element is required',
+                                },
+                            },
+
                             constraints: {
                                 numericality: {
-                                    lessThanOrEqualTo: 100,
                                 },
                             },
                             sanitize: val => +val,
-                            default: () => ["12", 12],
                         }],
                         errors: [{
                             type: {
                                 constraints: {
                                     presence: true,
                                     format: {
-                                        pattern: /error/,
-                                        message: '^must equal error!',
+                                        pattern: /Error$/,
+                                        message: '^must contain the word Error at the end',
                                     },
                                 },
-                                // default: 'error',
                             },
                             ages: [{
                                 arrayConstraints: {
+                                    presence: true,
                                     length: {
                                         minimum: 1,
                                         message: 'at least one element is required',
                                     },
                                 },
                                 constraints: {
-                                    // presence: false,
                                     numericality: {
-                                        // lessThanOrEqualTo: 100,
                                     },
                                 },
                                 sanitize: val => +val,
-                                // default: () => [12, 123],
                             }],
                         }],
                     }],

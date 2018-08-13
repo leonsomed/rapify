@@ -290,22 +290,29 @@ function validate(input, rules = {}, allInput) {
                 ...errors,
                 new InvalidApiParameterError(inputPath, 'must be an array'),
             ];
-        } else if (nextRule.arrayConstraints) {
-            const obj = buildObjectFromPath(inputPath.split('.'), nextInput);
-            const nextErrors = validate(obj, { [inputPath]: nextRule.arrayConstraints }, allInput);
-            errors = [
-                ...errors,
-                ...nextErrors,
-            ];
-        } else if (nextInput && nextInput.length) {
-            for (let i = 0; i < nextInput.length; i += 1) {
-                const indexInputPath = `${inputPath}.${i}`;
-                const obj = buildObjectFromPath(indexInputPath.split('.'), nextInput[i]);
-                const nextErrors = validate(obj, { [indexInputPath]: nextRule }, allInput);
+        } else {
+            if (nextRule.arrayConstraints) {
+                const obj = buildObjectFromPath(inputPath.split('.'), nextInput);
+                const nextErrors = validateJs(obj, { [inputPath]: nextRule.arrayConstraints });
                 errors = [
                     ...errors,
-                    ...nextErrors,
+                    ..._.flatMapDeep(
+                        nextErrors,
+                        (message, key) => new InvalidApiParameterError(key, message),
+                    ),
                 ];
+            }
+
+            if (nextInput && nextInput.length) {
+                for (let i = 0; i < nextInput.length; i += 1) {
+                    const indexInputPath = `${inputPath}.${i}`;
+                    const obj = buildObjectFromPath(indexInputPath.split('.'), nextInput[i]);
+                    const nextErrors = validate(obj, { [indexInputPath]: _.omit(nextRule, ['arrayConstraints']) }, allInput);
+                    errors = [
+                        ...errors,
+                        ...nextErrors,
+                    ];
+                }
             }
         }
     }

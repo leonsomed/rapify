@@ -7,7 +7,7 @@ const InvalidApiParameterError = require('../../../src/errors/invalidApiParamete
 describe('endpointValidator', () => {
     it('should call next without arguments when res.locals.wasRouteHandled is true and do not modify req.rapify', async () => {
         let error;
-        const req = httpMocks.request.rapify.endpoint();
+        const req = httpMocks.request.rapify.endpoint({});
         const res = httpMocks.response.default(true);
 
         await endpointValidator(req, res, (err) => { error = err; });
@@ -549,6 +549,184 @@ describe('endpointValidator', () => {
             await endpointValidator(req, res, (err) => { error = err; });
 
             expect(error).to.eqls(undefined);
+        });
+
+        describe('complex rules', () => {
+            const endpoint = {
+                body: {
+                    // primitive
+                    username: {
+                        constraints: {
+                            presence: true,
+                            format: {
+                                pattern: /[a-zA-Z]{4,20}/,
+                                message: '^name must be 4 to 20 characters long.',
+                            },
+                        },
+                    },
+                    // nested objects
+                    user: {
+                        name: {
+                            constraints: {
+                                presence: true,
+                                format: {
+                                    pattern: /[a-zA-Z]{3,20}/,
+                                    message: '^must include characters a through z',
+                                },
+                            },
+                        },
+                        ages: [{
+                            arrayConstraints: {
+                                presence: true,
+                                length: {
+                                    minimum: 1,
+                                    tooShort: 'at least one element is required',
+                                },
+                            },
+                            constraints: {
+                                custom: {
+                                    validate(input, value) {
+                                        if (input.username === 'leos') {
+                                            return 'leos is not a valid username';
+                                        }
+
+                                        return undefined;
+                                    },
+                                },
+                            },
+                        }],
+                    },
+                    // array of primitives
+                    ages: [{
+                        arrayConstraints: {
+                            presence: true,
+                            length: {
+                                minimum: 2,
+                                message: 'at least two elements are required',
+                            },
+                        },
+                        constraints: {
+                            numericality: {
+                            },
+                        },
+                        sanitize: val => +val,
+                    }],
+                    // array of objects
+                    users: [{
+                        arrayConstraints: {
+                            presence: true,
+                            length: {
+                                minimum: 1,
+                                tooShort: 'at least one element is required',
+                            },
+                        },
+
+                        name: {
+                            constraints: {
+                                presence: true,
+                                format: {
+                                    pattern: /[a-zA-Z]{3,20}/,
+                                    message: '^must contain characters a through z!',
+                                },
+                            },
+                        },
+                        ages: [{
+                            arrayConstraints: {
+                                presence: true,
+                                length: {
+                                    minimum: 1,
+                                    tooShort: 'at least one element is required',
+                                },
+                            },
+
+                            constraints: {
+                                numericality: {
+                                },
+                            },
+                            sanitize: val => +val,
+                        }],
+                        errors: [{
+                            type: {
+                                constraints: {
+                                    presence: true,
+                                    format: {
+                                        pattern: /.*Error$/,
+                                        message: '^must contain the word Error at the end',
+                                    },
+                                },
+                            },
+                            ages: [{
+                                arrayConstraints: {
+                                    presence: true,
+                                    length: {
+                                        minimum: 1,
+                                        message: 'at least one element is required',
+                                    },
+                                },
+                                constraints: {
+                                    numericality: {
+                                    },
+                                },
+                                sanitize: val => +val,
+                            }],
+                        }],
+                    }],
+                },
+            };
+
+            it('should validate correctly', async () => {
+                const bundle = {
+                    method: 'POST',
+                    url: '/users',
+                    body: {
+                        username: 'thedude',
+                        user: {
+                            name: 'thedude',
+                            ages: [18],
+                        },
+                        ages: [18, 22],
+                        users: [
+                            {
+                                name: 'thedude',
+                                ages: ['23'],
+                                errors: [
+                                    {
+                                        type: 'InvalidError',
+                                        ages: [1],
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                };
+
+                const req = httpMocks.request.rapify.endpoint(endpoint, bundle);
+                const res = httpMocks.response.default();
+                let error;
+
+                await endpointValidator(req, res, (err) => { error = err; });
+
+                expect(error).to.eqls(undefined);
+            });
+
+            it('should validate incorrectly', async () => {
+                // const bundle = {
+                //     method: 'POST',
+                //     url: '/users',
+                //     body: {
+                //         username: 'wow',
+                //     },
+                // };
+                // let error;
+                // const req = httpMocks.request.rapify.endpoint(endpoint, bundle);
+                // const res = httpMocks.response.default();
+
+                // await endpointValidator(req, res, (err) => { error = err; });
+
+                // expect(error).to.be.an.instanceOf(ListError);
+                // expect(error.list).to.have.lengthOf(1);
+                // expect(error.list[0]).to.be.instanceOf(InvalidApiParameterError);
+            });
         });
     });
 });

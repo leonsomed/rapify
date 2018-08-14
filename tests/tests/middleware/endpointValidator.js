@@ -43,6 +43,86 @@ describe('endpointValidator', () => {
         expect(req.rapify.props).to.eqls({ role: 'basic' });
     });
 
+    it('should apply defaults', async () => {
+        const endpoint = {
+            body: {
+                // primitive
+                username: {
+                    default: () => 'thename',
+                },
+                // nested objects
+                user: {
+                    name: {
+                        default: 'hello',
+                    },
+                    ages: [{
+                        default: [1, 9, 0],
+                    }],
+                },
+                // array of primitives
+                ages: [{
+                    default: [6, 7, 8],
+                }],
+                // array of objects
+                users: [{
+                    name: {
+                        default: 'dudeson',
+                    },
+                    ages: [{
+                        default: () => [4, 5, 6],
+                    }],
+                    errors: [{
+                        type: {
+                            default: () => 'custom',
+                        },
+                        ages: [{
+                            default: [1, 2, 3],
+                        }],
+                    }],
+                }],
+            },
+        };
+        const bundle = {
+            method: 'POST',
+            url: '/users',
+            body: {
+                users: [
+                    {
+                        errors: [
+                            {
+                            },
+                        ],
+                    },
+                ],
+            },
+        };
+
+        const req = httpMocks.request.rapify.endpoint(endpoint, bundle);
+        const res = httpMocks.response.default();
+        let error;
+
+        await endpointValidator(req, res, (err) => { error = err; });
+
+        expect(error).to.eqls(undefined);
+
+        const input = req.rapify.input;
+
+        expect(input.username).to.eqls('thename');
+        expect(input.user).to.eqls({ name: 'hello', ages: [1, 9, 0] });
+        expect(input.ages).to.eqls([6, 7, 8]);
+        expect(input.users).to.have.lengthOf(1);
+        expect(input.users[0]).to.eqls({
+            name: 'dudeson',
+            ages: [4, 5, 6],
+            errors: [
+                {
+                    type: 'custom',
+                    ages: [1, 2, 3],
+                },
+            ],
+        });
+    });
+
     describe('keep extra fields', () => {
         it('should keep extra fields in body', async () => {
             const endpoint = {

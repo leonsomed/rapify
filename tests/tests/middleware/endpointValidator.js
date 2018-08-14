@@ -557,10 +557,12 @@ describe('endpointValidator', () => {
                     // primitive
                     username: {
                         constraints: {
-                            presence: true,
+                            presence: {
+                                message: '^Is required.',
+                            },
                             format: {
                                 pattern: /[a-zA-Z]{4,20}/,
-                                message: '^name must be 4 to 20 characters long.',
+                                message: '^Name must be 4 to 20 characters long.',
                             },
                         },
                     },
@@ -568,26 +570,30 @@ describe('endpointValidator', () => {
                     user: {
                         name: {
                             constraints: {
-                                presence: true,
+                                presence: {
+                                    message: '^Is required.',
+                                },
                                 format: {
                                     pattern: /[a-zA-Z]{3,20}/,
-                                    message: '^must include characters a through z',
+                                    message: '^Must include characters a through z.',
                                 },
                             },
                         },
                         ages: [{
                             arrayConstraints: {
-                                presence: true,
+                                presence: {
+                                    message: '^Is required.',
+                                },
                                 length: {
                                     minimum: 1,
-                                    tooShort: 'at least one element is required',
+                                    message: '^At least one element is required.',
                                 },
                             },
                             constraints: {
                                 custom: {
                                     validate(input, value) {
                                         if (input.username === 'leos') {
-                                            return 'leos is not a valid username';
+                                            return '^Leos is not a valid username.';
                                         }
 
                                         return undefined;
@@ -599,14 +605,17 @@ describe('endpointValidator', () => {
                     // array of primitives
                     ages: [{
                         arrayConstraints: {
-                            presence: true,
+                            presence: {
+                                message: '^Is required.',
+                            },
                             length: {
                                 minimum: 2,
-                                message: 'at least two elements are required',
+                                message: '^At least two elements are required.',
                             },
                         },
                         constraints: {
                             numericality: {
+                                message: '^Must be a number.',
                             },
                         },
                         sanitize: val => +val,
@@ -614,33 +623,40 @@ describe('endpointValidator', () => {
                     // array of objects
                     users: [{
                         arrayConstraints: {
-                            presence: true,
+                            presence: {
+                                message: '^Is required.',
+                            },
                             length: {
                                 minimum: 1,
-                                tooShort: 'at least one element is required',
+                                message: '^At least one element is required.',
                             },
                         },
 
                         name: {
                             constraints: {
-                                presence: true,
+                                presence: {
+                                    message: '^Is required.',
+                                },
                                 format: {
                                     pattern: /[a-zA-Z]{3,20}/,
-                                    message: '^must contain characters a through z!',
+                                    message: '^Must contain characters a through z.',
                                 },
                             },
                         },
                         ages: [{
                             arrayConstraints: {
-                                presence: true,
+                                presence: {
+                                    message: '^Is required.',
+                                },
                                 length: {
                                     minimum: 1,
-                                    tooShort: 'at least one element is required',
+                                    message: '^At least one element is required.',
                                 },
                             },
 
                             constraints: {
                                 numericality: {
+                                    message: '^Must be a number.',
                                 },
                             },
                             sanitize: val => +val,
@@ -648,23 +664,28 @@ describe('endpointValidator', () => {
                         errors: [{
                             type: {
                                 constraints: {
-                                    presence: true,
+                                    presence: {
+                                        message: '^Is required.',
+                                    },
                                     format: {
                                         pattern: /.*Error$/,
-                                        message: '^must contain the word Error at the end',
+                                        message: '^Must end with the word Error.',
                                     },
                                 },
                             },
                             ages: [{
                                 arrayConstraints: {
-                                    presence: true,
+                                    presence: {
+                                        message: '^Is required.',
+                                    },
                                     length: {
                                         minimum: 1,
-                                        message: 'at least one element is required',
+                                        message: '^At least one element is required.',
                                     },
                                 },
                                 constraints: {
                                     numericality: {
+                                        message: '^Must be a number.',
                                     },
                                 },
                                 sanitize: val => +val,
@@ -710,22 +731,73 @@ describe('endpointValidator', () => {
             });
 
             it('should validate incorrectly', async () => {
-                // const bundle = {
-                //     method: 'POST',
-                //     url: '/users',
-                //     body: {
-                //         username: 'wow',
-                //     },
-                // };
-                // let error;
-                // const req = httpMocks.request.rapify.endpoint(endpoint, bundle);
-                // const res = httpMocks.response.default();
+                const bundle = {
+                    method: 'POST',
+                    url: '/users',
+                    body: {
+                        username: 'bad',
+                        user: {
+                            ages: [],
+                        },
+                        ages: ['a', 2],
+                        users: [
+                            {
+                                name: 'leo',
+                                ages: [
+                                    '12',
+                                ],
+                                errors: [
+                                    {
+                                        type: 'WeirdErrors',
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                };
+                let error;
+                const req = httpMocks.request.rapify.endpoint(endpoint, bundle);
+                const res = httpMocks.response.default();
 
-                // await endpointValidator(req, res, (err) => { error = err; });
+                await endpointValidator(req, res, (err) => { error = err; });
 
-                // expect(error).to.be.an.instanceOf(ListError);
-                // expect(error.list).to.have.lengthOf(1);
-                // expect(error.list[0]).to.be.instanceOf(InvalidApiParameterError);
+                expect(error).to.be.an.instanceOf(ListError);
+                expect(error.list).to.have.lengthOf(6);
+
+                const errorList = {
+                    username: {
+                        type: 'InvalidApiParameter',
+                        message: 'Name must be 4 to 20 characters long.',
+                    },
+                    'user.name': {
+                        type: 'InvalidApiParameter',
+                        message: 'Is required.',
+                    },
+                    'user.ages': {
+                        type: 'InvalidApiParameter',
+                        message: 'At least one element is required.',
+                    },
+                    'ages.0': {
+                        type: 'InvalidApiParameter',
+                        message: 'Must be a number.',
+                    },
+                    'users.0.errors.0.type': {
+                        type: 'InvalidApiParameter',
+                        message: 'Must end with the word Error.',
+                    },
+                    'users.0.errors.0.ages': {
+                        type: 'InvalidApiParameter',
+                        message: 'Is required.',
+                    },
+                };
+
+                const missMatch = error.list.find((n) => {
+                    const match = errorList[n.parameterName];
+
+                    return !match || match.type !== n.type || match.message !== n.message;
+                });
+
+                expect(missMatch).to.eqls(undefined);
             });
         });
     });

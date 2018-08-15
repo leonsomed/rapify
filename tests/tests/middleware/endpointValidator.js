@@ -3,6 +3,7 @@ const httpMocks = require('../../mocks/http');
 const endpointValidator = require('../../../src/middleware/endpointValidator');
 const ListError = require('../../../src/errors/list');
 const InvalidApiParameterError = require('../../../src/errors/invalidApiParameter');
+const util = require('../../helpers/util');
 
 describe('endpointValidator', () => {
     it('should call next without arguments when res.locals.wasRouteHandled is true and do not modify req.rapify', async () => {
@@ -775,6 +776,68 @@ describe('endpointValidator', () => {
                 },
             };
 
+            const customConstraintsEndpoint = {
+                body: {
+                    username: {
+                        constraints: {
+                            custom: {
+                                validate(input, value) {
+                                    if (!value || value.length < 5) {
+                                        return '^must be at least 5 characters long';
+                                    }
+                                },
+                            },
+                        },
+                    },
+                    user: {
+                        name: {
+                            constraints: {
+                                custom: {
+                                    validate(input, value) {
+                                        if (!value || value.length < 3) {
+                                            return '^must be at least 3 characters long';
+                                        }
+                                    },
+                                },
+                            },
+                        },
+                    },
+                    users: [{
+                        devices: [{
+                            constraints: {
+                                custom: {
+                                    validate(input, value) {
+                                        if (!value || isNaN(value)) {
+                                            return '^is not a number';
+                                        }
+                                    },
+                                },
+                            },
+                        }],
+                    }],
+                },
+            };
+
+            const customValidationEndpoint = {
+                body: {
+                    username: {},
+                    ages: [{
+                        default: [22],
+                    }],
+                },
+                customValidation(req) {
+                    const { username, ages } = req.rapify.input;
+
+                    if (username === 'leo') {
+                        throw new InvalidApiParameterError('username', 'value is invalid');
+                    }
+
+                    if (!ages || !ages.length || ages[0] !== 22) {
+                        throw new InvalidApiParameterError('ages', 'value is invalid');
+                    }
+                },
+            };
+
             it('should validate correctly', async () => {
                 const bundle = {
                     method: 'POST',
@@ -844,7 +907,7 @@ describe('endpointValidator', () => {
                 expect(error).to.be.an.instanceOf(ListError);
                 expect(error.list).to.have.lengthOf(6);
 
-                const errorList = {
+                const errorMap = {
                     username: {
                         type: 'InvalidApiParameter',
                         message: 'Name must be 4 to 20 characters long.',
@@ -871,13 +934,115 @@ describe('endpointValidator', () => {
                     },
                 };
 
-                const missMatch = error.list.find((n) => {
-                    const match = errorList[n.parameterName];
+                util.expectErrorListToHaveInvalidApiParameterErrors(errorMap, error);
+            });
 
-                    return !match || match.type !== n.type || match.message !== n.message;
-                });
+            it('should pass custom constraint validation', async () => {
+                const bundle = {
+                    method: 'POST',
+                    url: '/users',
+                    body: {
+                        username: 'leonso',
+                        user: {
+                            name: 'leo',
+                        },
+                        users: [
+                            {
+                                devices: [1, 2, 3],
+                            },
+                        ],
+                    },
+                };
 
-                expect(missMatch).to.eqls(undefined);
+                let error;
+                const req = httpMocks.request.rapify.endpoint(customConstraintsEndpoint, bundle);
+                const res = httpMocks.response.default();
+
+                await endpointValidator(req, res, (err) => { error = err; });
+
+                expect(error).to.eqls(undefined);
+            });
+
+            it('should fail custom constraint validation', async () => {
+                const bundle = {
+                    method: 'POST',
+                    url: '/users',
+                    body: {
+                        user: {
+                            names: 'l',
+                        },
+                        users: [
+                            {
+                                devices: [1, 2, 'asd'],
+                            },
+                        ],
+                    },
+                };
+
+                let error;
+                const req = httpMocks.request.rapify.endpoint(customConstraintsEndpoint, bundle);
+                const res = httpMocks.response.default();
+
+                await endpointValidator(req, res, (err) => { error = err; });
+
+                expect(error).to.be.an.instanceOf(ListError);
+                expect(error.list).to.have.lengthOf(3);
+
+                const errorMap = {
+                    username: {
+                        type: 'InvalidApiParameter',
+                        message: 'must be at least 5 characters long',
+                    },
+                    'user.name': {
+                        type: 'InvalidApiParameter',
+                        message: 'must be at least 3 characters long',
+                    },
+                    'users.0.devices.2': {
+                        type: 'InvalidApiParameter',
+                        message: 'is not a number',
+                    },
+                };
+
+                util.expectErrorListToHaveInvalidApiParameterErrors(errorMap, error);
+            });
+
+            it('should pass customValidation', async () => {
+                const bundle = {
+                    method: 'POST',
+                    url: '/users',
+                    body: {
+                        username: 'leonso',
+                        ages: [22],
+                    },
+                };
+
+                let error;
+                const req = httpMocks.request.rapify.endpoint(customValidationEndpoint, bundle);
+                const res = httpMocks.response.default();
+
+                await endpointValidator(req, res, (err) => { error = err; });
+
+                expect(error).to.eqls(undefined);
+            });
+
+            it('should fail customValidation', async () => {
+                const bundle = {
+                    method: 'POST',
+                    url: '/users',
+                    body: {
+                        username: 'leo',
+                    },
+                };
+
+                let error;
+                const req = httpMocks.request.rapify.endpoint(customValidationEndpoint, bundle);
+                const res = httpMocks.response.default();
+
+                await endpointValidator(req, res, (err) => { error = err; });
+
+                expect(error).to.be.an.instanceOf(InvalidApiParameterError);
+                expect(error.parameterName).to.eqls('username');
+                expect(error.message).to.eqls('value is invalid');
             });
         });
     });

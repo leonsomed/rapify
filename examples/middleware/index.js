@@ -9,13 +9,13 @@ rapify.bootstrap({
     middleware: [
         {
             middleware: (req, res, next) => {
-                console.log('you can specify the middleware level for better control');
+                console.log('app middleware 1 - you can specify the middleware level for better control');
                 next();
             },
             level: 'postDefault',
         },
         (req, res, next) => {
-            console.log('you can specify a middleware function directly');
+            console.log('app middleware 2 - you can specify a middleware function directly');
             next();
         },
     ],

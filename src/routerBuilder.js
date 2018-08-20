@@ -26,6 +26,10 @@ function parseController(controller) {
         newController.crudInterface = mongooseCrudInterface(model);
     }
 
+    if (!controller.middleware) {
+        newController.middleware = [];
+    }
+
     return newController;
 }
 
@@ -41,6 +45,8 @@ function buildRestEndpoint(operation, controller) {
                 relativeRoute: '/',
                 method: POST,
                 // formatRules
+                ignoreControllerMiddleware: false,
+                middleware: [],
             };
         }
 
@@ -52,6 +58,8 @@ function buildRestEndpoint(operation, controller) {
                 relativeRoute: '/:id',
                 method: GET,
                 // formatRules
+                ignoreControllerMiddleware: false,
+                middleware: [],
             };
         }
 
@@ -63,6 +71,8 @@ function buildRestEndpoint(operation, controller) {
                 relativeRoute: '/:id',
                 method: POST,
                 // formatRules
+                ignoreControllerMiddleware: false,
+                middleware: [],
             };
         }
 
@@ -74,6 +84,8 @@ function buildRestEndpoint(operation, controller) {
                 relativeRoute: '/:id',
                 method: DELETE,
                 // formatRules
+                ignoreControllerMiddleware: false,
+                middleware: [],
             };
         }
 
@@ -84,6 +96,8 @@ function buildRestEndpoint(operation, controller) {
                 fullRoute: `${controller.prefix}/`,
                 relativeRoute: '/',
                 method: GET,
+                ignoreControllerMiddleware: false,
+                middleware: [],
                 params: formatRules({
                     pagination: {
                         page: {
@@ -185,6 +199,8 @@ function parseEndpoints(controller) {
                 fullRoute: `${controller.prefix}${route}`,
                 relativeRoute: route,
                 method,
+                ignoreControllerMiddleware: Boolean(endpoint.ignoreControllerMiddleware),
+                middleware: endpoint.middleware || [],
                 ...formatEndpointRules(endpoint),
             }))
         )) : [];
@@ -355,11 +371,14 @@ function fromController(controller) {
         const endpointInjector = (req, res, next) => { req.rapify._endpoint = endpoint; next(); };
         const endpointHandler = getEndpointHandler(endpoint, controller);
         const sanitizeResponse = endpoint.sanitizeResponse;
+        const ignoreControllerMiddleware = endpoint.ignoreControllerMiddleware;
 
         const args = [
             endpoint.relativeRoute,
             endpointInjector,
             endpointValidator,
+            ...(ignoreControllerMiddleware ? [] : parsedController.middleware),
+            ...endpoint.middleware,
             endpointHandler,
             ...sanitizeResponse ? [getSanitizerHandlerWrapper(endpoint.sanitizeResponse)] : [],
         ];

@@ -129,4 +129,50 @@ describe('routerBuilder', () => {
 
         expect(validateControllerWrapper(controller)).to.not.throw();
     });
+
+    it('should register controller level middleware', () => {
+        const controller = {
+            prefix: 'users',
+            middleware: [
+                (req, res, next) => {
+                    req.test = 'ok';
+                    next();
+                },
+            ],
+            endpoints: {
+                '/': {
+                    [GET]: {
+                        handler: (req, response) => {
+                            response({ message: req.test });
+                        },
+                    },
+                },
+            },
+        };
+
+        expect(validateControllerWrapper(controller)).to.not.throw();
+    });
+
+    it('should register endpoint level middleware', () => {
+        const controller = {
+            prefix: 'users',
+            endpoints: {
+                '/': {
+                    [GET]: {
+                        middleware: [
+                            (req, res, next) => {
+                                req.test = 'ok';
+                                next();
+                            },
+                        ],
+                        handler: (req, response) => {
+                            response({ message: req.test });
+                        },
+                    },
+                },
+            },
+        };
+
+        expect(validateControllerWrapper(controller)).to.not.throw();
+    });
 });

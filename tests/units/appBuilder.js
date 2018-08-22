@@ -18,11 +18,6 @@ describe('appBuilder', () => {
             expect(builder.registerMiddleware).to.have.lengthOf(1);
         });
 
-        it('should have method "registerAuthMiddleware" with exact parameters', () => {
-            expect(typeof builder.registerAuthMiddleware).to.eqls('function');
-            expect(builder.registerAuthMiddleware).to.have.lengthOf(1);
-        });
-
         it('should have method "registerController" with exact parameters', () => {
             expect(typeof builder.registerController).to.eqls('function');
             expect(builder.registerController).to.have.lengthOf(1);

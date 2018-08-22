@@ -2,7 +2,6 @@
 // const appBuilder = rapify.appBuilder(options);
 
 // appBuilder.registerMiddleware(middleware);
-// appBuilder.registerAuthMiddleware(middleware);
 // appBuilder.registerController(controller);
 
 // const app = appBuilder.build();

@@ -15,12 +15,9 @@ const middlewareLevels = [
     cMidLevels.preDefault,
     cMidLevels.default,
     cMidLevels.postDefault,
-    cMidLevels.prePublic,
-    cMidLevels.public,
-    cMidLevels.postPublic,
-    cMidLevels.prePrivate,
-    cMidLevels.private,
-    cMidLevels.postPrivate,
+    cMidLevels.preEndpoint,
+    cMidLevels.endpoint,
+    cMidLevels.postEndpoint,
     cMidLevels.preError,
     cMidLevels.error,
     cMidLevels.postError,
@@ -49,7 +46,6 @@ function getDefaultMiddleware(options) {
 function initializeFromOptions(options, builder) {
     const {
         controllers,
-        authMiddleware,
         middleware,
     } = options;
 
@@ -74,12 +70,6 @@ function initializeFromOptions(options, builder) {
         }
     }
 
-    if (authMiddleware && authMiddleware.length) {
-        for (const mid of authMiddleware) {
-            builder.registerAuthMiddleware(mid);
-        }
-    }
-
     if (controllers && controllers.length) {
         for (const controller of controllers) {
             builder.registerController(controller);
@@ -98,13 +88,10 @@ function appBuilder(opts) {
         registerMiddleware: (mid, level = cMidLevels.preDefault) => {
             middleware.push({ middleware: mid, level });
         },
-        registerAuthMiddleware: (mid) => {
-            middleware.push({ middleware: mid, level: cMidLevels.prePrivate });
-        },
         registerController: (controller) => {
             middleware.push({
                 middleware: routerBuilder.fromController(controller),
-                level: controller.public ? cMidLevels.public : cMidLevels.private,
+                level: cMidLevels.endpoint,
                 prefix: controller.prefix,
             });
         },
@@ -132,8 +119,7 @@ function appBuilder(opts) {
         initializeFromOptions(options, builder);
     }
 
-    builder.registerMiddleware(responseMiddleware, cMidLevels.postPublic);
-    builder.registerMiddleware(responseMiddleware, cMidLevels.postPrivate);
+    builder.registerMiddleware(responseMiddleware, cMidLevels.postEndpoint);
 
     return builder;
 }

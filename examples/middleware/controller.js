@@ -4,7 +4,6 @@ const { GET } = rapify.constants.http;
 
 module.exports = {
     prefix: '/middleware',
-    public: true,
     middleware: [
         (req, res, next) => {
             console.log('controller level middleware 1');

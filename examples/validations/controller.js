@@ -5,7 +5,6 @@ const memoryInterface = rapify.crudInterfaces.memory();
 
 module.exports = {
     prefix: '/users',
-    public: true,
     restify: false,
     crudInterface: memoryInterface,
     endpoints: {

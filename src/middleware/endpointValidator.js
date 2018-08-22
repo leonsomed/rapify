@@ -322,11 +322,6 @@ function validate(input, rules = {}, allInput) {
 
 const validateRequest = async (req, res, next) => {
     try {
-        if (res.locals.wasRouteHandled) {
-            next();
-            return;
-        }
-
         const rule = {
             ...req.rapify._endpoint,
             params: req.rapify._endpoint.params,

@@ -6,21 +6,6 @@ const InvalidApiParameterError = require('../../../src/errors/invalidApiParamete
 const util = require('../../helpers/util');
 
 describe('endpointValidator', () => {
-    it('should call next without arguments when res.locals.wasRouteHandled is true and do not modify req.rapify', async () => {
-        let error;
-        const req = httpMocks.request.rapify.endpoint({});
-        const res = httpMocks.response.default(true);
-
-        await endpointValidator(req, res, (err) => { error = err; });
-
-        expect(error).to.eqls(undefined);
-        expect(req.rapify.input).to.eqls(undefined);
-        expect(req.rapify.body).to.eqls(undefined);
-        expect(req.rapify.params).to.eqls(undefined);
-        expect(req.rapify.query).to.eqls(undefined);
-        expect(req.rapify.props).to.eqls(undefined);
-    });
-
     it('should generate props based on propsMap', async () => {
         const endpoint = {
             propsMap: {

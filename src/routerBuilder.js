@@ -284,30 +284,18 @@ function ruleHasChildren(obj) {
 
 function getCrudOpHandler(xCrudOp, crudInterface) {
     return asyncRoute(async (req, res, next) => {
-        if (res.locals.wasRouteHandled) {
-            next();
-            return;
-        }
-
         const temp = crudInterface[xCrudOp](req.rapify);
         const result = temp && typeof temp.then === 'function' ? await temp : temp;
 
         res.locals.response = { data: result };
-        res.locals.wasRouteHandled = true;
         next();
     });
 }
 
 function getHandlerWrapper(handler) {
     return asyncRoute(async (req, res, next) => {
-        if (res.locals.wasRouteHandled) {
-            next();
-            return;
-        }
-
         const temp = handler(req, (data) => {
             res.locals.response = data;
-            res.locals.wasRouteHandled = true;
             next();
         }, res, next);
 

@@ -62,10 +62,8 @@ const mocks = {
         },
     },
     response: {
-        default(wasRouteHandled = false) {
+        default() {
             const res = httpMocks.createResponse();
-
-            res.locals.wasRouteHandled = wasRouteHandled;
 
             return res;
         },

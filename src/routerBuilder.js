@@ -33,8 +33,12 @@ function parseController(controller) {
     return newController;
 }
 
-function buildRestEndpoint(operation, controller) {
+function buildRestEndpoint(operation, controller, config) {
     const { POST, DELETE, GET } = constants.http;
+
+    if (config.middleware && Array.isArray(config)) {
+        throw new Error(`restify ${operation} has an invalid middleware configuration`);
+    }
 
     switch (operation) {
         case constants.crud.create: {
@@ -45,8 +49,8 @@ function buildRestEndpoint(operation, controller) {
                 relativeRoute: '/',
                 method: POST,
                 // formatRules
-                ignoreControllerMiddleware: false,
-                middleware: [],
+                ignoreControllerMiddleware: Boolean(config.ignoreControllerMiddleware),
+                middleware: config.middleware || [],
             };
         }
 
@@ -58,8 +62,8 @@ function buildRestEndpoint(operation, controller) {
                 relativeRoute: '/:id',
                 method: GET,
                 // formatRules
-                ignoreControllerMiddleware: false,
-                middleware: [],
+                ignoreControllerMiddleware: Boolean(config.ignoreControllerMiddleware),
+                middleware: config.middleware || [],
             };
         }
 
@@ -71,8 +75,8 @@ function buildRestEndpoint(operation, controller) {
                 relativeRoute: '/:id',
                 method: POST,
                 // formatRules
-                ignoreControllerMiddleware: false,
-                middleware: [],
+                ignoreControllerMiddleware: Boolean(config.ignoreControllerMiddleware),
+                middleware: config.middleware || [],
             };
         }
 
@@ -84,8 +88,8 @@ function buildRestEndpoint(operation, controller) {
                 relativeRoute: '/:id',
                 method: DELETE,
                 // formatRules
-                ignoreControllerMiddleware: false,
-                middleware: [],
+                ignoreControllerMiddleware: Boolean(config.ignoreControllerMiddleware),
+                middleware: config.middleware || [],
             };
         }
 
@@ -96,8 +100,8 @@ function buildRestEndpoint(operation, controller) {
                 fullRoute: `${controller.prefix}/`,
                 relativeRoute: '/',
                 method: GET,
-                ignoreControllerMiddleware: false,
-                middleware: [],
+                ignoreControllerMiddleware: Boolean(config.ignoreControllerMiddleware),
+                middleware: config.middleware || [],
                 params: formatRules({
                     pagination: {
                         page: {
@@ -188,7 +192,7 @@ function parseEndpoints(controller) {
                 throw new Error(`crudInterface operation: ${op} must be a function for controller: ${prefix}`);
             }
 
-            missingEndpoints.push(buildRestEndpoint(op, controller));
+            missingEndpoints.push(buildRestEndpoint(op, controller, restOperations[op]));
         });
     }
 
@@ -284,6 +288,8 @@ function ruleHasChildren(obj) {
 
 function getCrudOpHandler(xCrudOp, crudInterface) {
     return asyncRoute(async (req, res, next) => {
+        // TODO implement map values for create/update and pass it as a second argument to crudInterface handler
+        // throw error if id is not defined for create and update operations
         const temp = crudInterface[xCrudOp](req.rapify);
         const result = temp && typeof temp.then === 'function' ? await temp : temp;
 

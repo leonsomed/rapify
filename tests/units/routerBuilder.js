@@ -61,6 +61,24 @@ const validateControllerWrapper = controller => () => {
         method: Object.keys(route.methods)[0],
     }));
 
+    routerRoutes.sort((a, b) => {
+        const x = `${a.path}${a.method}`;
+        const y = `${b.path}${b.method}`;
+
+        if (x > y) return 1;
+        if (x < y) return -1;
+        return 0;
+    });
+
+    controllerRoutes.sort((a, b) => {
+        const x = `${a.path}${a.method}`;
+        const y = `${b.path}${b.method}`;
+
+        if (x > y) return 1;
+        if (x < y) return -1;
+        return 0;
+    });
+
     expect(controllerRoutes).to.eqls(routerRoutes);
 };
 
@@ -171,6 +189,33 @@ describe('routerBuilder', () => {
                     },
                 },
             },
+        };
+
+        expect(validateControllerWrapper(controller)).to.not.throw();
+    });
+
+    it('should register restify with custom configuration', () => {
+        const controller = {
+            prefix: 'users',
+            middleware: [
+                (req, res, next) => next(),
+            ],
+            restify: {
+                create: {
+                    middleware: [
+                        (req, res, next) => next(),
+                    ],
+                },
+                update: true,
+                delete: true,
+                read: {
+                    ignoreControllerMiddleware: true,
+                },
+                paginate: {
+                    ignoreControllerMiddleware: true,
+                },
+            },
+            crudInterface: memoryInterface(),
         };
 
         expect(validateControllerWrapper(controller)).to.not.throw();

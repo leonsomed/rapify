@@ -4,6 +4,7 @@ const endpointValidator = require('../../../src/middleware/endpointValidator');
 const ListError = require('../../../src/errors/list');
 const InvalidApiParameterError = require('../../../src/errors/invalidApiParameter');
 const util = require('../../helpers/util');
+const validation = require('../../../src/helpers/validation');
 
 describe('endpointValidator', () => {
     it('should generate props based on propsMap', async () => {
@@ -823,6 +824,20 @@ describe('endpointValidator', () => {
                 },
             };
 
+            const getJsonEndpoint = {
+                getJson: true,
+                query: {
+                    user: {
+                        name: validation.bundles.field.textLength(3, 30, true),
+                        age: validation.bundles.field.integerRange(18, 150, true),
+                    },
+                    types: [{
+                        ...validation.bundles.field.arrayLength(1),
+                        ...validation.bundles.field.within(['admin', 'basic'], true),
+                    }],
+                },
+            };
+
             it('should validate correctly', async () => {
                 const bundle = {
                     method: 'POST',
@@ -1028,6 +1043,58 @@ describe('endpointValidator', () => {
                 expect(error).to.be.an.instanceOf(InvalidApiParameterError);
                 expect(error.parameterName).to.eqls('username');
                 expect(error.message).to.eqls('value is invalid');
+            });
+
+            it('should pass getJson validation', async () => {
+                const bundle = {
+                    method: 'GET',
+                    url: '/users',
+                    query: {
+                        json: JSON.stringify({
+                            user: {
+                                name: 'leo',
+                                age: 22,
+                            },
+                            types: [
+                                'basic',
+                            ],
+                        }),
+                    },
+                };
+
+                let error;
+                const req = httpMocks.request.rapify.endpoint(getJsonEndpoint, bundle);
+                const res = httpMocks.response.default();
+
+                await endpointValidator(req, res, (err) => { error = err; });
+
+                expect(error).to.eqls(undefined);
+            });
+
+            it('should fail getJson validation', async () => {
+                const bundle = {
+                    method: 'GET',
+                    url: '/users',
+                    query: {
+                        user: {
+                            name: 'leo',
+                            age: 22,
+                        },
+                        types: [
+                            'basic',
+                        ],
+                    },
+                };
+
+                let error;
+                const req = httpMocks.request.rapify.endpoint(getJsonEndpoint, bundle);
+                const res = httpMocks.response.default();
+
+                await endpointValidator(req, res, (err) => { error = err; });
+
+                expect(error).to.be.an.instanceOf(InvalidApiParameterError);
+                expect(error.parameterName).to.eqls('json');
+                expect(error.message).to.eqls('missing json parameter in query string');
             });
         });
     });

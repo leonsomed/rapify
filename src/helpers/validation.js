@@ -68,6 +68,20 @@ const constraints = {
         },
     }),
 
+    arrayLength: (minimum, maximum, presence) => ({
+        presence,
+        length: {
+            ...minimum !== undefined && {
+                minimum,
+                tooShort: `^at least ${minimum} elements are required`,
+            },
+            ...maximum !== undefined && {
+                maximum,
+                tooLong: `^at most ${maximum} elements are accepted`,
+            },
+        },
+    }),
+
     date: presence => ({
         presence,
         datetime: {
@@ -140,12 +154,23 @@ const bundles = {
         integerRange: (from, to, presence, defaultValue) => ({
             constraints: constraints.integerRange(from, to, presence),
             sanitize: sanitize.numeric,
-            ...typeof defaultValue === 'boolean' && { default: defaultValue },
+            ...defaultValue !== undefined && { default: defaultValue },
         }),
         numberRange: (from, to, presence, defaultValue) => ({
             constraints: constraints.numberRange(from, to, presence),
             sanitize: sanitize.numeric,
-            ...typeof defaultValue === 'boolean' && { default: defaultValue },
+            ...defaultValue !== undefined && { default: defaultValue },
+        }),
+        textLength: (min, max, presence, defaultValue) => ({
+            constraints: constraints.textLength(min, max, presence),
+            ...defaultValue !== undefined && { default: defaultValue },
+        }),
+        within: (allowedValues, presence, defaultValue) => ({
+            constraints: constraints.within(allowedValues, presence),
+            ...defaultValue !== undefined && { default: defaultValue },
+        }),
+        arrayLength: (min, max) => ({
+            arrayConstraints: constraints.arrayLength(min, max, true),
         }),
     },
 };

@@ -35,7 +35,7 @@ function parseController(controller) {
     return newController;
 }
 
-function getDefaultRestifyConfig(config) {
+function getDefaultRestifyConfig(config, controller) {
     if (config.middleware && Array.isArray(config)) {
         throw new Error('restify has an invalid middleware configuration');
     }
@@ -46,6 +46,7 @@ function getDefaultRestifyConfig(config) {
 
     return {
         ...formatEndpointRules(config),
+        getJson: config.getJson !== undefined ? config.getJson : controller.getJson,
         keepExtraFields,
         middleware: config.middleware || [],
         ignoreControllerMiddleware: Boolean(config.ignoreControllerMiddleware),
@@ -54,7 +55,7 @@ function getDefaultRestifyConfig(config) {
 
 function buildRestEndpoint(operation, controller, restifyConfig) {
     const { POST, DELETE, GET } = constants.http;
-    const config = getDefaultRestifyConfig(restifyConfig);
+    const config = getDefaultRestifyConfig(restifyConfig, controller);
 
     switch (operation) {
         case constants.crud.create: {
@@ -167,6 +168,7 @@ function parseEndpoints(controller) {
     const newEndpoints = controller.endpoints ?
         _.flatMapDeep(Object.entries(controller.endpoints), ([route, endpoints]) => (
             Object.entries(endpoints).map(([method, endpoint]) => ({
+                getJson: endpoint.getJson !== undefined ? endpoint.getJson : controller.getJson,
                 fullRoute: `${controller.prefix}${route}`,
                 relativeRoute: route,
                 method,

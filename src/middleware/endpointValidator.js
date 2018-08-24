@@ -335,6 +335,18 @@ const validateRequest = async (req, res, next) => {
         let body = req.body;
         let props = {};
 
+        if (rule.getJson && req.method === 'GET') {
+            if (!query.json) {
+                throw new InvalidApiParameterError('json', 'missing json parameter in query string');
+            } else {
+                try {
+                    query = JSON.parse(query.json);
+                } catch (error) {
+                    throw new InvalidApiParameterError('json', 'invalid json string provided');
+                }
+            }
+        }
+
         // get props by running the provided function for each propMap
         if (rule.propsMap) {
             Object.entries(rule.propsMap).forEach(async ([key, fn]) => {

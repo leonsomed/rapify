@@ -6,6 +6,7 @@ const endpointValidator = require('./middleware/endpointValidator');
 const mongooseCrudInterface = require('./crudInterfaces/mongoose');
 const util = require('./helpers/util');
 const InvalidApiParameterError = require('./errors/invalidApiParameter');
+const validation = require('./helpers/validation');
 
 const allowedCrudOps = [
     constants.crud.create,
@@ -107,55 +108,14 @@ function buildRestEndpoint(operation, controller, restifyConfig) {
                 fullRoute: `${controller.prefix}/`,
                 relativeRoute: '/',
                 method: GET,
-                ...config.params && {
-                    params: formatRules({
-                        pagination: {
-                            page: {
-                                constraints: {
-                                    numericality: {
-                                        onlyInteger: true,
-                                        greaterThanOrEqualTo: 1,
-                                    },
-                                },
-                                sanitize: val => +val,
-                                default: 1,
-                            },
-                            pageSize: {
-                                constraints: {
-                                    numericality: {
-                                        onlyInteger: true,
-                                        greaterThanOrEqualTo: 1,
-                                        lessThanOrEqualTo: 100,
-                                    },
-                                },
-                                sanitize: val => +val,
-                                default: 20,
-                            },
-                            sortBy: {
-                                constraints: {
-                                    inclusion: {
-                                        within: [
-                                            '_id',
-                                        ],
-                                        message: '^Invalid sortBy value',
-                                    },
-                                },
-                                default: '_id',
-                            },
-                            sortOrder: {
-                                constraints: {
-                                    inclusion: {
-                                        within: [
-                                            'asc',
-                                            'desc',
-                                        ],
-                                        message: '^Invalid sortOrder value',
-                                    },
-                                },
-                                default: 'desc',
-                            },
-                        },
-                    }),
+                ...(!config.params) && {
+                    params: formatRules(validation.bundles.full.pagination({
+                        defaultPageNumber: 1,
+                        defaultPageSize: 20,
+                        sortFields: ['_id'],
+                        defaultSortField: '_id',
+                        defaultSortOrderAsc: true,
+                    })),
                 },
             };
         }

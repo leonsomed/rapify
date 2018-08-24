@@ -60,6 +60,23 @@ describe('middleware levels', () => {
                 expect(error.type).to.eqls('NotAuthorized');
             });
         });
+
+        describe('has auth headers', () => {
+            it('should update with errors missing id x-crud-op', async () => {
+                const res = await requester
+                    .post('/restify/x-crud-op/update')
+                    .set('test', '123')
+                    .send({
+                        age: 18,
+                    });
+
+                expect(res).to.have.status(400);
+                expect(res).to.be.json;
+                expect(res.body.errors).to.have.lengthOf(1);
+                expect(res.body.errors[0].type).to.eqls('InvalidApiParameter');
+                expect(res.body.errors[0].parameterName).to.eqls('id');
+            });
+        });
     });
 
     describe('succeed', () => {
@@ -80,6 +97,7 @@ describe('middleware levels', () => {
                     id: 100001,
                     name: 'leo',
                     age: 123,
+                    extra: 100000,
                 });
             });
 
@@ -114,6 +132,20 @@ describe('middleware levels', () => {
                 expect(res).to.have.status(200);
                 expect(res).to.be.json;
                 expect(res.body.data.id).to.eqls(id);
+            });
+
+            it('should update without errors x-crud-op', async () => {
+                const res = await requester
+                    .post('/restify/x-crud-op/update')
+                    .set('test', '123')
+                    .send({
+                        id: 100001,
+                        age: 18,
+                    });
+
+                expect(res).to.have.status(200);
+                expect(res).to.be.json;
+                expect(res.body.data.age).to.eqls(18);
             });
         });
 

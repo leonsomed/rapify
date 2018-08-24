@@ -3,6 +3,8 @@ const NotAuthorizedError = require('../../../src/errors/notAuthorized');
 
 const memoryInterface = rapify.crudInterfaces.memory;
 
+const { POST } = rapify.constants.http;
+
 function authMiddleware(req, res, next) {
     if (req.headers.test === '123') {
         next();
@@ -22,6 +24,16 @@ module.exports = {
             middleware: [
                 authMiddleware,
             ],
+            dataMap(req) {
+                return {
+                    ...req.rapify.input,
+                    extra: 100000,
+                };
+            },
+            body: {
+                name: {},
+                age: {},
+            },
         },
         update: true,
         delete: true,
@@ -33,4 +45,16 @@ module.exports = {
         },
     },
     crudInterface: memoryInterface(),
+    endpoints: {
+        '/x-crud-op/update': {
+            [POST]: {
+                xCrudOp: 'update',
+                body: {
+                    id: {},
+                    name: {},
+                    age: {},
+                },
+            },
+        },
+    },
 };

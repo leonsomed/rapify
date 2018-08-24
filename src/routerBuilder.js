@@ -5,6 +5,7 @@ const asyncRoute = require('./middleware/asyncRoute');
 const endpointValidator = require('./middleware/endpointValidator');
 const mongooseCrudInterface = require('./crudInterfaces/mongoose');
 const util = require('./helpers/util');
+const InvalidApiParameterError = require('./errors/invalidApiParameter');
 
 const allowedCrudOps = [
     constants.crud.create,
@@ -33,123 +34,129 @@ function parseController(controller) {
     return newController;
 }
 
-function buildRestEndpoint(operation, controller, config) {
-    const { POST, DELETE, GET } = constants.http;
-
+function getDefaultRestifyConfig(config) {
     if (config.middleware && Array.isArray(config)) {
-        throw new Error(`restify ${operation} has an invalid middleware configuration`);
+        throw new Error('restify has an invalid middleware configuration');
     }
+
+    const keepExtraFields = Boolean(
+        !config.body && !config.params && !config.query && !config.props,
+    );
+
+    return {
+        ...formatEndpointRules(config),
+        keepExtraFields,
+        middleware: config.middleware || [],
+        ignoreControllerMiddleware: Boolean(config.ignoreControllerMiddleware),
+    };
+}
+
+function buildRestEndpoint(operation, controller, restifyConfig) {
+    const { POST, DELETE, GET } = constants.http;
+    const config = getDefaultRestifyConfig(restifyConfig);
 
     switch (operation) {
         case constants.crud.create: {
             return {
-                keepExtraFields: true,
+                ...config,
                 xCrudOp: operation,
                 fullRoute: `${controller.prefix}/`,
                 relativeRoute: '/',
                 method: POST,
                 // formatRules
-                ignoreControllerMiddleware: Boolean(config.ignoreControllerMiddleware),
-                middleware: config.middleware || [],
             };
         }
 
         case constants.crud.read: {
             return {
-                keepExtraFields: true,
+                ...config,
                 xCrudOp: operation,
                 fullRoute: `${controller.prefix}/:id`,
                 relativeRoute: '/:id',
                 method: GET,
                 // formatRules
-                ignoreControllerMiddleware: Boolean(config.ignoreControllerMiddleware),
-                middleware: config.middleware || [],
             };
         }
 
         case constants.crud.update: {
             return {
-                keepExtraFields: true,
+                ...config,
                 xCrudOp: operation,
                 fullRoute: `${controller.prefix}/:id`,
                 relativeRoute: '/:id',
                 method: POST,
                 // formatRules
-                ignoreControllerMiddleware: Boolean(config.ignoreControllerMiddleware),
-                middleware: config.middleware || [],
             };
         }
 
         case constants.crud.delete: {
             return {
-                keepExtraFields: true,
+                ...config,
                 xCrudOp: operation,
                 fullRoute: `${controller.prefix}/:id`,
                 relativeRoute: '/:id',
                 method: DELETE,
                 // formatRules
-                ignoreControllerMiddleware: Boolean(config.ignoreControllerMiddleware),
-                middleware: config.middleware || [],
             };
         }
 
         case constants.crud.paginate: {
             return {
-                keepExtraFields: true,
+                ...config,
                 xCrudOp: operation,
                 fullRoute: `${controller.prefix}/`,
                 relativeRoute: '/',
                 method: GET,
-                ignoreControllerMiddleware: Boolean(config.ignoreControllerMiddleware),
-                middleware: config.middleware || [],
-                params: formatRules({
-                    pagination: {
-                        page: {
-                            constraints: {
-                                numericality: {
-                                    onlyInteger: true,
-                                    greaterThanOrEqualTo: 1,
+                ...config.params && {
+                    params: formatRules({
+                        pagination: {
+                            page: {
+                                constraints: {
+                                    numericality: {
+                                        onlyInteger: true,
+                                        greaterThanOrEqualTo: 1,
+                                    },
                                 },
+                                sanitize: val => +val,
+                                default: 1,
                             },
-                            sanitize: val => +val,
-                            default: 1,
-                        },
-                        pageSize: {
-                            constraints: {
-                                numericality: {
-                                    onlyInteger: true,
-                                    greaterThanOrEqualTo: 1,
-                                    lessThanOrEqualTo: 100,
+                            pageSize: {
+                                constraints: {
+                                    numericality: {
+                                        onlyInteger: true,
+                                        greaterThanOrEqualTo: 1,
+                                        lessThanOrEqualTo: 100,
+                                    },
                                 },
+                                sanitize: val => +val,
+                                default: 20,
                             },
-                            sanitize: val => +val,
-                            default: 20,
-                        },
-                        sortBy: {
-                            constraints: {
-                                inclusion: {
-                                    within: [
-                                        '_id',
-                                    ],
-                                    message: '^Invalid sortBy value',
+                            sortBy: {
+                                constraints: {
+                                    inclusion: {
+                                        within: [
+                                            '_id',
+                                        ],
+                                        message: '^Invalid sortBy value',
+                                    },
                                 },
+                                default: '_id',
                             },
-                            default: '_id',
-                        },
-                        sortOrder: {
-                            constraints: {
-                                inclusion: {
-                                    within: [
-                                        'asc',
-                                        'desc',
-                                    ],
-                                    message: '^Invalid sortOrder value',
+                            sortOrder: {
+                                constraints: {
+                                    inclusion: {
+                                        within: [
+                                            'asc',
+                                            'desc',
+                                        ],
+                                        message: '^Invalid sortOrder value',
+                                    },
                                 },
+                                default: 'desc',
                             },
-                            default: 'desc',
                         },
-                    },
-                }),
+                    }),
+                },
             };
         }
     }
@@ -286,11 +293,15 @@ function ruleHasChildren(obj) {
     return Boolean(keys.length);
 }
 
-function getCrudOpHandler(xCrudOp, crudInterface) {
+function getCrudOpHandler(xCrudOp, crudInterface, endpoint) {
     return asyncRoute(async (req, res, next) => {
-        // TODO implement map values for create/update and pass it as a second argument to crudInterface handler
-        // throw error if id is not defined for create and update operations
-        const temp = crudInterface[xCrudOp](req.rapify);
+        if (xCrudOp === constants.crud.update && !req.rapify.input.id) {
+            throw new InvalidApiParameterError('id', 'is required');
+        }
+
+        const data = typeof endpoint.dataMap === 'function' ? endpoint.dataMap(req) : null;
+
+        const temp = crudInterface[xCrudOp](req.rapify, data);
         const result = temp && typeof temp.then === 'function' ? await temp : temp;
 
         res.locals.response = { data: result };
@@ -350,7 +361,7 @@ function getEndpointHandler(endpoint, controller) {
     }
 
     if (xCrudOp) {
-        return getCrudOpHandler(xCrudOp, controller.crudInterface);
+        return getCrudOpHandler(xCrudOp, controller.crudInterface, endpoint);
     }
 
     throw new Error('handler or xCrudOp must be specified');

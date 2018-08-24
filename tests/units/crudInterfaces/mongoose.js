@@ -166,6 +166,42 @@ describe('mongoose CRUD interface', () => {
 
                 expect(doc).to.include({ name: 'bob', age: 25 });
             });
+
+            it('should create a document with mappedData', async () => {
+                const body = {
+                    name: 'leos',
+                    age: 222,
+                };
+                const rapify = httpMocks.input.rapify({ body });
+
+                const mappedData = {
+                    name: 'leos2',
+                    age: 18,
+                };
+
+                const user = await crudInterface.create(rapify, mappedData);
+
+                expect(user.name).to.equal(mappedData.name);
+                expect(user.age).to.equal(mappedData.age);
+            });
+
+            it('should update a document with mappedData', async () => {
+                const name = 'leonso';
+                const age = 88;
+                const params = { id: newUser.id };
+                const body = { name, age };
+                const rapify = httpMocks.input.rapify({ params, body });
+
+                const mappedData = {
+                    name: 'leos2',
+                    age: 18,
+                };
+
+                const user = await crudInterface.update(rapify, mappedData);
+
+                expect(user.name).to.equal(mappedData.name);
+                expect(user.age).to.equal(mappedData.age);
+            });
         });
 
         describe('fail', () => {

@@ -6,8 +6,8 @@ function mongooseInterface(model) {
     }
 
     return {
-        create: async (rapify) => {
-            const doc = await model.create(rapify.input);
+        create: async (rapify, mappedData) => {
+            const doc = await model.create(mappedData || rapify.input);
 
             return doc;
         },
@@ -20,9 +20,9 @@ function mongooseInterface(model) {
 
             return doc;
         },
-        update: async (rapify) => {
+        update: async (rapify, mappedData) => {
             const { id, ...data } = rapify.input;
-            const doc = await model.findOneAndUpdate({ _id: id }, { $set: data }, { new: true });
+            const doc = await model.findOneAndUpdate({ _id: id }, { $set: mappedData || data }, { new: true });
 
             if (!doc) {
                 throw new ResourceNotFoundError(rapify.input.id, 'not found');

@@ -5,12 +5,12 @@ function memoryInterface(defaultValue = []) {
     let idCounter = 100000;
 
     return {
-        create: async (rapify) => {
+        create: async (rapify, mappedData) => {
             idCounter += 1;
 
             const doc = {
                 id: idCounter,
-                ...rapify.input,
+                ...mappedData || rapify.input,
             };
             docs.push(doc);
 
@@ -25,7 +25,7 @@ function memoryInterface(defaultValue = []) {
 
             return doc;
         },
-        update: async (rapify) => {
+        update: async (rapify, mappedData) => {
             const { id, ...data } = rapify.input;
             const index = docs.findIndex(n => n.id === +id);
 
@@ -35,7 +35,7 @@ function memoryInterface(defaultValue = []) {
 
             docs[index] = {
                 ...docs[index],
-                ...data,
+                ...mappedData || data,
             };
 
             return docs[index];

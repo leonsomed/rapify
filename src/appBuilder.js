@@ -88,10 +88,11 @@ function appBuilder(opts) {
         registerMiddleware: (mid, level = cMidLevels.preDefault) => {
             middleware.push({ middleware: mid, level });
         },
-        registerController: (controller) => {
-            if (controller.getJson === undefined) {
-                controller.getJson = options.getJson;
-            }
+        registerController: (originalController) => {
+            const controller = {
+                ...originalController,
+                ...(originalController.getJson === undefined) && { getJson: options.getJson },
+            };
 
             middleware.push({
                 middleware: routerBuilder.fromController(controller),

@@ -3,7 +3,7 @@ const app = require('./app');
 
 const expect = chai.expect;
 
-describe('middleware levels', () => {
+describe('restifyConfig', () => {
     let requester;
     let server;
 

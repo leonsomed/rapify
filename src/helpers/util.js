@@ -11,6 +11,16 @@ const helper = {
 
         return result;
     },
+
+    promise() {
+        let resolve;
+        const promise = new Promise((reso) => { resolve = reso; });
+
+        return {
+            promise,
+            resolve,
+        };
+    },
 };
 
 module.exports = helper;

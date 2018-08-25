@@ -3,7 +3,7 @@ const Mongoose = require('mongoose').Mongoose;
 const mongoose = new Mongoose();
 
 async function init() {
-    await mongoose.connect('mongodb://localhost:27017/rapify');
+    await mongoose.connect('mongodb://localhost:27017/rapify', { useNewUrlParser: true });
 
     return mongoose;
 }

@@ -1,0 +1,23 @@
+{
+    "presets": [
+        [
+            "env",
+            {
+                "targets": {
+                    "targets": {
+                        "node": "4.0.0"
+                    }
+                }
+            }
+        ]
+    ],
+    "plugins": [
+        [
+            "transform-runtime",
+            {
+                "regenerator": true
+            }
+        ],
+        "transform-object-rest-spread"
+    ]
+}

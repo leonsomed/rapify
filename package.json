@@ -1,15 +1,31 @@
 {
     "name": "rapify",
     "version": "0.0.1",
-    "description": "",
+    "description": "Handles all boiler plate required to implement a REST API service",
+    "author": "Leonso Medina",
+    "url" : "https://github.com/leonsomed/rapify/issues",
+    "license": "ISC",
+    "keywords": [
+        "express",
+        "validate",
+        "rest",
+        "restful",
+        "api",
+        "server",
+        "javascript"
+    ],
+    "repository": {
+        "type" : "git",
+        "url" : "https://github.com/leonsomed/rapify.git"
+    },
+    "engines" : {
+        "node" : ">=4.0.0"
+    },
     "main": "index.js",
     "scripts": {
         "test": "./node_modules/mocha/bin/mocha --recursive ./tests",
         "build": "./node_modules/webpack/bin/webpack.js --config webpack.config.js"
     },
-    "keywords": [],
-    "author": "Leonso Medina",
-    "license": "ISC",
     "dependencies": {
         "lodash": "^4.17.10",
         "validate.js": "^0.12.0",

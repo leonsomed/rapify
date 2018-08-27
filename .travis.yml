@@ -5,9 +5,6 @@ node_js:
 - '10'
 services:
 - mongodb
-branches:
-  only:
-  - master
 cache:
   directories:
   - node_modules
@@ -19,5 +16,6 @@ deploy:
   api_key:
     secure: DsqC7T/l5Qm1oASzpdxYSCVY5QGHjVxQXZPi6L0rdFzGHGDBRLz4TJHKHnU61RMG3ur3zBRhdcLPRaq6rAxdKoSTGHbusPMEkhQg8U2Ssn2BXSjSVH9+8N00Vhn2zXbBNkSe3qa1zdUtWh/VYcEyA83ptM9YIRuxtOnPrRSvEOgLiDpOuWNjZ4xXuD94181HQZm3RM5U9ote6HKoWfTE5C68OXiaNJqiWXhJfRPRJhu+qCZGUN5NMNrtdxceAf3czWGfn+zg6njiVwttSrO9/3M9Kvxb3elidQKrA8pIiir5ToqOHp1oPzlhV37M6m2ddyNNFcF24ySH8hrhX60tMgctO3OFbCibU810d19uUTloOix1HhiSzbGo2AJaFJunAw5unYJC4TKnQzKKinhsVSV3Z15XQQ7zSOkOq/rKWpHHvyxAL1ka5Nte3M08HjL6eB9NUPSOGqWLULm9ONgCWIhqx4BBf0SPpnot/uVlgPvm+zry+bR9T8LbdgjmVmLPAl9RWI9A7HIurXJ4LzzfF8XiUHXKd73gy2gqLLT8bEkr6cXMwAznpOnh5Q6gL1ZXRT6p/8As1PpepsuCCPMuZ3PDNXM95G1tXVYSa+5+34EVzqGfKw1iMbmvGW7GY3GsG3Ls7bpK369aQqnAGWbiaEBGaOKnz5WIGA6hypimIsM=
   on:
+    branch: master
     tags: true
     repo: leonsomed/rapify

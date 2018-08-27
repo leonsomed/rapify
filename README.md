@@ -3,7 +3,7 @@ Handles all boiler plate required to implement a REST API service.
 
 [![GitHub license](https://img.shields.io/badge/license-ISC-blue.svg)](https://github.com/leonsomed/rapify/blob/master/LICENSE)
 [![npm version](https://img.shields.io/npm/v/rapify.svg?style=flat)](https://www.npmjs.com/package/rapify)
-[![npm version](https://img.shields.io/travis/:user/:repo.svg)](https://www.npmjs.com/package/rapify)
+[![Build Status](https://travis-ci.org/leonsomed/rapify.svg?branch=master)](https://travis-ci.org/leonsomed/rapify)
 
 ```javascript
 const rapify = require('rapify');

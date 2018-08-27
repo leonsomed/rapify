@@ -3,7 +3,6 @@ const controller = require('./controller');
 
 const app = rapify.bootstrap({
     onStart: () => console.log('rapify server listening...'),
-    cors: true,
     bodyParser: true,
     middleware: [
         {

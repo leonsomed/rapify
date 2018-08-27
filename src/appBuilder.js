@@ -1,6 +1,5 @@
 const express = require('express');
 const bodyParserMid = require('body-parser');
-const corsMid = require('cors');
 
 const initRequestMiddleware = require('./middleware/initRequest');
 const responseMiddleware = require('./middleware/endpointResponse');
@@ -24,16 +23,8 @@ const middlewareLevels = [
 ];
 
 function getDefaultMiddleware(options) {
-    const { cors, bodyParser } = options;
+    const { bodyParser } = options;
     const middleware = [initRequestMiddleware];
-
-    if (cors) {
-        middleware.push(corsMid({
-            origin: true,
-            credentials: true,
-            methods: ['GET', 'POST', 'DELETE', 'PUT'],
-        }));
-    }
 
     if (bodyParser) {
         middleware.push(bodyParserMid.urlencoded({ extended: true }));

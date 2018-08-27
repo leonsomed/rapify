@@ -7,7 +7,6 @@ mongoose.connect('mongodb://localhost/rapify')
         rapify.bootstrap({
             onStart: () => console.log('rapify server listening...'),
             port: 3000,
-            cors: true,
             bodyParser: true,
             controllers: [
                 userController,

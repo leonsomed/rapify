@@ -4,6 +4,10 @@ node_modules
 examples
 .vscode
 .eslintrc.js
-webpack.config.js
-TODO.txt
+webpack.config*
+.travis.yml
+.eslintrc.js
+.babelrc
+test.js
 lib/tests.js
+TODO.txt

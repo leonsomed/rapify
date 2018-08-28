@@ -11,6 +11,7 @@ cache:
 before_script:
 - sleep 14
 deploy:
+  skip_cleanup: true
   provider: npm
   email: leo@leomedina.net
   api_key:

@@ -1,5 +1,7 @@
 const expect = require('chai').expect;
-const bootstrap = require('../../src/bootstrap');
+const rapify = require('../../lib');
+
+const bootstrap = rapify.bootstrap;
 
 describe('bootstrap', () => {
     it('should accept two parameters: "options" and "defaultApp"', () => {

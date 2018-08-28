@@ -1,10 +1,12 @@
 const expect = require('chai').expect;
 const httpMocks = require('../../mocks/http');
-const endpointValidator = require('../../../src/middleware/endpointValidator');
-const ListError = require('../../../src/errors/list');
-const InvalidApiParameterError = require('../../../src/errors/invalidApiParameter');
 const util = require('../../helpers/util');
-const validation = require('../../../src/helpers/validation');
+const rapify = require('../../../lib');
+
+const validation = rapify.validations;
+const ListError = rapify.errors.list;
+const InvalidApiParameterError = rapify.errors.invalidApiParameter;
+const endpointValidator = rapify.middleware.endpointValidator;
 
 describe('endpointValidator', () => {
     it('should generate props based on propsMap', async () => {

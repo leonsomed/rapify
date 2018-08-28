@@ -6,3 +6,4 @@ examples
 .eslintrc.js
 webpack.config.js
 TODO.txt
+lib/tests.js

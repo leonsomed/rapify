@@ -2,8 +2,9 @@ const chai = require('chai');
 const appOn = require('./appOn');
 const appOff = require('./appOff');
 const appNone = require('./appNone');
-const util = require('../../../src/helpers/util');
+const rapify = require('../../../lib');
 
+const util = rapify.util;
 const expect = chai.expect;
 
 describe('getJson', () => {

@@ -1,5 +1,7 @@
 const expect = require('chai').expect;
-const appBuilder = require('../../src/appBuilder');
+const rapify = require('../../lib');
+
+const appBuilder = rapify.appBuilder;
 
 describe('appBuilder', () => {
     let builder;

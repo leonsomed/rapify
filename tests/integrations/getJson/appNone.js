@@ -1,4 +1,4 @@
-const rapify = require('../../../src/index');
+const rapify = require('../../../lib');
 const controllerOn = require('./controllerOn');
 const controllerOff = require('./controllerOff');
 const controllerNone = require('./controllerNone');

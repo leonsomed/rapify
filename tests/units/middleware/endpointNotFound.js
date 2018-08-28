@@ -1,7 +1,9 @@
 const expect = require('chai').expect;
 const httpMocks = require('../../mocks/http');
-const endpointNotFound = require('../../../src/middleware/endpointNotFound');
-const EndpointNotImplementedError = require('../../../src/errors/endpointNotImplemented');
+const rapify = require('../../../lib');
+
+const endpointNotFound = rapify.middleware.endpointNotFound;
+const EndpointNotImplementedError = rapify.errors.endpointNotImplemented;
 
 describe('endpointNotFound', () => {
     let request;

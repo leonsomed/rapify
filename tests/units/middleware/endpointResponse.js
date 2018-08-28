@@ -1,6 +1,8 @@
 const expect = require('chai').expect;
 const httpMocks = require('../../mocks/http');
-const endpointResponse = require('../../../src/middleware/endpointResponse');
+const rapify = require('../../../lib');
+
+const endpointResponse = rapify.middleware.endpointResponse;
 
 describe('endpointResponse', () => {
     let request;

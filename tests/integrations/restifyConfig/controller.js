@@ -1,8 +1,7 @@
-const rapify = require('../../../src/index');
-const NotAuthorizedError = require('../../../src/errors/notAuthorized');
+const rapify = require('../../../lib');
 
+const NotAuthorizedError = rapify.errors.notAuthorized;
 const memoryInterface = rapify.crudInterfaces.memory;
-
 const { POST } = rapify.constants.http;
 
 function authMiddleware(req, res, next) {

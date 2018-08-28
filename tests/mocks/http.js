@@ -1,5 +1,7 @@
 const httpMocks = require('node-mocks-http');
-const routerBuilder = require('../../src/routerBuilder');
+const rapify = require('../../lib');
+
+const routerBuilder = rapify.routerBuilder;
 
 const mocks = {
     input: {

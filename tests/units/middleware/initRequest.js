@@ -1,6 +1,8 @@
 const expect = require('chai').expect;
 const httpMocks = require('../../mocks/http');
-const initRequest = require('../../../src/middleware/initRequest');
+const rapify = require('../../../lib');
+
+const initRequest = rapify.middleware.initRequest;
 
 describe('initRequest', () => {
     let request;

@@ -1,9 +1,9 @@
 const expect = require('chai').expect;
-const routerBuilder = require('../../src/routerBuilder');
-const rapify = require('../../src/index');
+const rapify = require('../../lib');
 const controllerMocks = require('../mocks/controller');
-const memoryInterface = require('../../src/crudInterfaces/memory');
 
+const routerBuilder = rapify.routerBuilder;
+const memoryInterface = rapify.crudInterfaces.memory;
 const { GET, POST, DELETE } = rapify.constants.http;
 
 function getControllerRoutes(controller) {

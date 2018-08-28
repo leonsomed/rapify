@@ -3,12 +3,10 @@ const path = require('path');
 module.exports = {
     target: 'node',
     mode: 'production',
-    entry: './src/index.js',
+    entry: './test.js',
     output: {
         path: path.resolve(__dirname, 'lib'),
-        filename: 'index.js',
-        library: 'rapify',
-        libraryTarget: 'umd',
+        filename: 'tests.js',
     },
     module: {
         rules: [

@@ -1,8 +1,10 @@
 const expect = require('chai').expect;
 const httpMocks = require('../../mocks/http');
-const endpointError = require('../../../src/middleware/endpointError');
-const UnknownError = require('../../../src/errors/unknown');
-const ListError = require('../../../src/errors/list');
+const rapify = require('../../../lib');
+
+const endpointError = rapify.middleware.endpointError;
+const UnknownError = rapify.errors.unknown;
+const ListError = rapify.errors.list;
 
 describe('endpointError', () => {
     let req;
@@ -71,7 +73,7 @@ describe('endpointError', () => {
 
     it('should return a generic 500 error when toJSON is not defined', async () => {
         const status = 500;
-        const errorMessage = 'there was an error';
+        const errorMessage = 'UnknownError';
         const error = new Error(errorMessage);
 
         endpointError(error, req, res, () => {});

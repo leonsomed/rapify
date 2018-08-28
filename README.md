@@ -44,7 +44,7 @@ rapify.bootstrap({
 
 ## Installation
 This library is available as an npm package and it requires express as a peer dependency. Which means you have to have express as part of your dependencies.
-It has been tested with express version >= 4.0.0.
+It has been tested with express version >= 8.0.0.
 
 ```
 # install express if you haven't already

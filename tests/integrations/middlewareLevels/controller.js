@@ -1,4 +1,4 @@
-const rapify = require('../../../src/index');
+const rapify = require('../../../lib');
 
 const { GET } = rapify.constants.http;
 

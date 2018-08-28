@@ -1,6 +1,8 @@
 const expect = require('chai').expect;
+const rapify = require('../../../lib');
 const httpMocks = require('../../mocks/http');
-const asyncRoute = require('../../../src/middleware/asyncRoute');
+
+const asyncRoute = rapify.middleware.asyncRoute;
 
 describe('asyncRoute', () => {
     let request;

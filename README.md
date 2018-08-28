@@ -46,13 +46,13 @@ rapify.bootstrap({
 This library is available as an npm package and it requires express as a peer dependency. Which means you have to have express as part of your dependencies.
 It has been tested with express version >= 8.0.0.
 
-```
+```bash
 # install express if you haven't already
 npm install express
 ```
 
 Now install rapify
-```
+```bash
 npm install rapify
 ```
 
@@ -62,7 +62,7 @@ The documentation is a work in progress. However, check out the examples directo
 ## Examples
 Go to the examples directory you can run each one independently.
 
-```
+```bash
 cd examples/middleware
 
 node index.js
@@ -71,7 +71,7 @@ node index.js
 ## Tests
 After installing dependecies run the tests with npm.
 
-```
+```bash
 npm install
 npm test
 ```

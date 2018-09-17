@@ -109,14 +109,16 @@ function buildRestEndpoint(operation, controller, restifyConfig) {
                 fullRoute: `${controller.prefix}/`,
                 relativeRoute: '/',
                 method: GET,
-                ...(!config.params) && {
-                    params: formatRules(validation.bundles.full.pagination({
-                        defaultPageNumber: 1,
-                        defaultPageSize: 20,
-                        sortFields: ['_id'],
-                        defaultSortField: '_id',
-                        defaultSortOrderAsc: true,
-                    })),
+                ...(!config.query) && {
+                    query: formatRules({
+                        pagination: validation.bundles.full.pagination({
+                            defaultPageNumber: 1,
+                            defaultPageSize: 20,
+                            sortFields: ['_id'],
+                            defaultSortField: '_id',
+                            defaultSortOrderAsc: true,
+                        }),
+                    }),
                 },
             };
         }

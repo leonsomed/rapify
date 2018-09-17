@@ -61,7 +61,7 @@ function buildRestEndpoint(operation, controller, restifyConfig) {
         case constants.crud.create: {
             return {
                 ...config,
-                xCrudOp: operation,
+                ...!restifyConfig.handler && { xCrudOp: operation },
                 fullRoute: `${controller.prefix}/`,
                 relativeRoute: '/',
                 method: POST,
@@ -72,7 +72,7 @@ function buildRestEndpoint(operation, controller, restifyConfig) {
         case constants.crud.read: {
             return {
                 ...config,
-                xCrudOp: operation,
+                ...!restifyConfig.handler && { xCrudOp: operation },
                 fullRoute: `${controller.prefix}/:id`,
                 relativeRoute: '/:id',
                 method: GET,
@@ -83,7 +83,7 @@ function buildRestEndpoint(operation, controller, restifyConfig) {
         case constants.crud.update: {
             return {
                 ...config,
-                xCrudOp: operation,
+                ...!restifyConfig.handler && { xCrudOp: operation },
                 fullRoute: `${controller.prefix}/:id`,
                 relativeRoute: '/:id',
                 method: POST,
@@ -94,7 +94,7 @@ function buildRestEndpoint(operation, controller, restifyConfig) {
         case constants.crud.delete: {
             return {
                 ...config,
-                xCrudOp: operation,
+                ...!restifyConfig.handler && { xCrudOp: operation },
                 fullRoute: `${controller.prefix}/:id`,
                 relativeRoute: '/:id',
                 method: DELETE,
@@ -105,7 +105,7 @@ function buildRestEndpoint(operation, controller, restifyConfig) {
         case constants.crud.paginate: {
             return {
                 ...config,
-                xCrudOp: operation,
+                ...!restifyConfig.handler && { xCrudOp: operation },
                 fullRoute: `${controller.prefix}/`,
                 relativeRoute: '/',
                 method: GET,
@@ -261,7 +261,11 @@ function getCrudOpHandler(xCrudOp, crudInterface, endpoint) {
             throw new InvalidApiParameterError('id', 'is required');
         }
 
-        const data = typeof endpoint.dataMap === 'function' ? endpoint.dataMap(req) : null;
+        let data = typeof endpoint.dataMap === 'function' ? endpoint.dataMap(req) : null;
+
+        if (data && typeof data.then === 'function') {
+            data = await data;
+        }
 
         const temp = crudInterface[xCrudOp](req.rapify, data);
         const result = temp && typeof temp.then === 'function' ? await temp : temp;

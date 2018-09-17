@@ -146,6 +146,10 @@ const bundles = {
         }),
     },
     field: {
+        mongoId: (presence, defaultValue) => ({
+            constraints: constraints.mongoId(presence),
+            ...defaultValue !== undefined && { default: defaultValue },
+        }),
         boolean: (presence, defaultValue) => ({
             constraints: constraints.boolean(presence),
             sanitize: sanitize.boolean,

@@ -1,6 +1,6 @@
 class NotAuthorized extends Error {
-    constructor() {
-        super('You do not have access');
+    constructor(message) {
+        super(message || 'You do not have access');
 
         this.type = 'NotAuthorized';
         this.status = 401;

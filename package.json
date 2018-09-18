@@ -1,6 +1,6 @@
 {
     "name": "rapify",
-    "version": "0.0.17",
+    "version": "0.0.18",
     "description": "Handles all boiler plate required to implement a REST API service",
     "author": "Leonso Medina",
     "url": "https://github.com/leonsomed/rapify/issues",

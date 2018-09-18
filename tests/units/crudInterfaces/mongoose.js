@@ -95,16 +95,16 @@ describe('mongoose CRUD interface', () => {
                 const rapify = httpMocks.input.rapify({ query });
                 const result = await crudInterface.paginate(rapify);
 
-                expect(result).to.have.keys(['pagination', 'documents']);
+                expect(result).to.have.keys(['pagination', 'data']);
                 expect(result).to.nested.include({
                     'pagination.page': 1,
                     'pagination.pageSize': 20,
                     'pagination.totalPages': 1,
                     'pagination.totalDocuments': 1,
                 });
-                expect(result.documents).to.have.lengthOf(1);
+                expect(result.data).to.have.lengthOf(1);
 
-                const doc = result.documents[0];
+                const doc = result.data[0];
 
                 expect(doc).to.include({ name: originalName, age: originalAge });
             });
@@ -126,7 +126,7 @@ describe('mongoose CRUD interface', () => {
                 let rapify = httpMocks.input.rapify({ query });
                 let result = await crudInterface.paginate(rapify);
 
-                expect(result).to.have.keys(['pagination', 'documents']);
+                expect(result).to.have.keys(['pagination', 'data']);
                 expect(result).to.nested.include({ 'pagination.page': 1 });
                 expect(result).to.nested.include({ 'pagination.pageSize': pageSize });
                 expect(result).to.nested.include({ 'pagination.totalPages': totalPages });
@@ -136,7 +136,7 @@ describe('mongoose CRUD interface', () => {
                 rapify = httpMocks.input.rapify({ query });
                 result = await crudInterface.paginate(rapify);
 
-                expect(result).to.have.keys(['pagination', 'documents']);
+                expect(result).to.have.keys(['pagination', 'data']);
                 expect(result).to.nested.include({ 'pagination.page': 2 });
                 expect(result).to.nested.include({ 'pagination.pageSize': pageSize });
                 expect(result).to.nested.include({ 'pagination.totalPages': totalPages });
@@ -160,9 +160,9 @@ describe('mongoose CRUD interface', () => {
                 const rapify = httpMocks.input.rapify({ query });
                 const result = await crudInterface.paginate(rapify);
 
-                expect(result.documents).to.have.lengthOf(7);
+                expect(result.data).to.have.lengthOf(7);
 
-                const doc = result.documents[1];
+                const doc = result.data[1];
 
                 expect(doc).to.include({ name: 'bob', age: 25 });
             });

@@ -272,7 +272,12 @@ function getCrudOpHandler(xCrudOp, crudInterface, endpoint) {
         const temp = crudInterface[xCrudOp](req.rapify, data);
         const result = temp && typeof temp.then === 'function' ? await temp : temp;
 
-        res.locals.response = { data: result };
+        if (result && result.pagination && result.data) {
+            res.locals.response = result;
+        } else {
+            res.locals.response = { data: result || null };
+        }
+
         next();
     });
 }

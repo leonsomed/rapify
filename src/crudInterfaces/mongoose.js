@@ -63,7 +63,7 @@ function mongooseInterface(model) {
                     totalPages: Math.ceil(totalDocuments / options.pageSize),
                     totalDocuments,
                 },
-                documents,
+                data: documents,
             };
         },
     };
